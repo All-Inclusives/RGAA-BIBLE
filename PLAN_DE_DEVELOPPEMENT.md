@@ -2,8 +2,8 @@
 
 > Document de pilotage vivant : il fixe les étapes et les critères de validation du projet. Il sera mis à jour à chaque jalon, décision importante ou changement de périmètre.
 
-**Version :** 0.7 — **Date :** 4 novembre 2026  
-**Statut général :** jalons 0, 1 et 2 terminés ; socle et pipeline de publication du jalon 3 prêts, dépôt à initialiser  
+**Version :** 0.8 — **Date :** 4 novembre 2026  
+**Statut général :** jalons 0, 1 et 2 terminés ; socle et pipeline de publication du jalon 3 poussés, clés et téléchargement distant à raccorder  
 **Cahier des charges :** `Cahier des charges RGAA BIBLE .txt`
 
 ## 1. Vision et objectif
@@ -64,7 +64,7 @@ Le produit doit fonctionner hors ligne. Son moteur métier et ses données seron
 - **Validation et activation :** `install_update` vérifie le manifeste, la taille et l’empreinte, la provenance, la structure du corpus et les compteurs ; il écrit en staging sur le même volume puis active par renommage atomique du dossier versionné. `load_or_bundled` charge la version locale la plus récente ou le corpus intégré s’il n’y a pas encore de mise à jour.
 - **Reprise :** les dossiers `.staging-*` incomplets sont ignorés ; les paquets invalides ne remplacent pas la version active ; les séquences répétées identiques sont idempotentes et les retours à une séquence antérieure sont refusés.
 - **Signature :** les manifestes peuvent être signés Ed25519 ; `install_signed_update` et `load_signed_or_bundled` exigent une clé publique de confiance. Le générateur signe si `A11Y_UPDATE_PRIVATE_KEY` contient une clé privée PEM, et refuse les publications sans signature avec `--require-signature`.
-- **Publication :** workflow manuel `.github/workflows/publish-rgaa-dataset.yml`, séquence explicite et publication comme Release GitHub taguée `rgaa-data-<sequence>`. Le dépôt cible `All-Inclusives/RGAA-BIBLE` a été vérifié public et vide (aucune branche) ; le workflow est prêt localement mais n’a pas été poussé ni exécuté.
+- **Publication :** workflow manuel `.github/workflows/publish-rgaa-dataset.yml`, séquence explicite et publication comme Release GitHub taguée `rgaa-data-<sequence>`. Le dépôt public [`All-Inclusives/RGAA-BIBLE`](https://github.com/All-Inclusives/RGAA-BIBLE) a reçu le commit initial `5dd396ee7ca8997cc958677622517f3fcba1f953` ; le workflow apparaît actif dans GitHub Actions. Aucune Release de données n’a encore été publiée.
 - **Sécurité :** le paquet de séquence 1 du dépôt est un artefact local de test non signé ; il ne doit pas être publié. La clé privée n’est ni générée ni stockée dans le projet. Le secret Actions `A11Y_UPDATE_PRIVATE_KEY` doit être ajouté au dépôt. L’application exigera la clé publique correspondante pour lire les mises à jour signées. L’API de téléchargement GitHub sera raccordée au consommateur Tauri.
 
 ## 3. Principes de réalisation
@@ -152,12 +152,12 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - [x] Tester les paquets identiques, incompatibles, corrompus, les régressions de séquence et les dossiers staging interrompus.
 - [x] Définir le mécanisme de signature Ed25519 ; rendre les mises à jour signées obligatoires pour le parcours de chargement prévu en production.
 - [x] Préparer un workflow manuel GitHub Actions qui génère un paquet signé et publie les assets sous un tag de Release déterministe.
-- [ ] Initialiser le dépôt GitHub vide puis y publier le code du projet et le workflow.
+- [x] Initialiser le dépôt GitHub puis y publier le code du projet et le workflow ; vérifier le commit distant et la disponibilité du workflow.
 - [ ] Générer une paire de clés hors du dépôt, enregistrer la clé privée comme secret GitHub Actions et configurer uniquement la clé publique dans l’application.
 - [ ] Raccorder la découverte/téléchargement des Releases au client Tauri ; exiger une signature valide avant installation.
 
 **Livrables réalisés :** formats de manifeste et paquet, générateur, vérification Ed25519, installation locale versionnée et tests.  
-**Dépendance restante :** le dépôt `All-Inclusives/RGAA-BIBLE` est vide ; le workflow et le code n’y ont pas été poussés, aucune paire de clés de publication n’a été créée, et le téléchargement réseau n’est pas encore raccordé.
+**Dépendance restante :** le workflow est publié, mais les clés GitHub Actions / application ne sont pas configurées et le téléchargement réseau n’est pas encore raccordé. Aucune Release n’a été créée.
 
 ### Jalon 4 — Interface Tauri
 
@@ -226,7 +226,7 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - Mettre à jour les cases à cocher uniquement après vérification du livrable correspondant.
 - À chaque fin de jalon, noter ici la date, le résultat, les écarts et les décisions prises.
 - Si le périmètre ou une hypothèse structurante change, mettre à jour les sections concernées et la version du document.
-- Prochaine action recommandée : autoriser ou non l’initialisation/push du projet vers son dépôt GitHub ; le développement local du **jalon 4** peut commencer sans attendre, et c’est là que le premier aperçu visuel sera disponible.
+- Prochaine action recommandée : engager le **jalon 4** pour créer le premier écran Tauri et fournir un aperçu visuel ; configurer les clés et le téléchargement des Releases avant d’activer les mises à jour distantes.
 
 ### Journal des jalons
 
@@ -237,4 +237,5 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 | 4 novembre 2026 | Cadrage MVP | Périmètre confirmé : corpus officiel RGAA 4.1.2 complet avec enrichissement pédagogique progressif ; Windows desktop comme première cible. |
 | 4 novembre 2026 | Jalon 1 terminé | Schéma `1.0.0`, import reproductible et corpus JSON versionné créés. Validation complète : 13 thèmes, 106 critères, 258 tests, 119 définitions ; 258/258 méthodologies correspondantes. Réimport identique ; source inchangée. JSON retenu provisoirement pour le MVP. |
 | 4 novembre 2026 | Jalon 2 terminé | Workspace Cargo et crate `a11y-core` créés. API indépendante de Tauri, recherche accent-insensible, filtres et validation de corpus implémentés. 7 tests passent ; Clippy sans avertissement ; benchmark après indexation : ~63,5 µs/recherche en Release. |
-| 4 novembre 2026 | Jalon 3 — socle et pipeline local | Manifeste, paquet de test séquence 1, vérification SHA-256, installation versionnée atomique et signature Ed25519 implémentés ; 14 tests passent. Workflow GitHub Releases prêt pour `All-Inclusives/RGAA-BIBLE`, dépôt public actuellement vide. Initialisation/push, clés et téléchargement réseau restent à faire. |
+| 4 novembre 2026 | Jalon 3 — socle et pipeline local | Manifeste, paquet de test séquence 1, vérification SHA-256, installation versionnée atomique et signature Ed25519 implémentés ; 14 tests passent. Workflow GitHub Releases préparé pour `All-Inclusives/RGAA-BIBLE` ; clés et téléchargement réseau restent à configurer. |
+| 4 novembre 2026 | Publication initiale GitHub | Premier commit `5dd396e` poussé sur `main` avec le code, le corpus validé et le workflow. GitHub Actions confirme le workflow « Publish RGAA dataset » actif. Aucun secret ni clé privée n’a été publié ; aucune Release de données n’a été créée. |
