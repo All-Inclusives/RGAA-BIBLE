@@ -1,0 +1,146 @@
+Cahier des Charges Fonctionnel & Technique
+Projet : A11y-Bible / AccessiGuide Dev
+
+Objet : Application multiplateforme d'accompagnement à la compréhension et à l'application des règles d'accessibilité numérique (RGAA / WCAG / EN 301 549).
+
+1. Vision & Périmètre du Projet
+1.1. Objectifs
+Offrir une « bible portable » de l’accessibilité aux développeurs, designers et créateurs d'outils numériques.
+
+Rendre les obligations légales et normatives compréhensibles grâce à des explications pédagogiques, des exemples de code et une illustration des impacts réels sur les utilisateurs.
+
+Poser les bases d'un moteur métier robuste qui alimentera dans un premier temps l'application standalone (mobile/desktop) et pourra être consommé ultérieurement par des extensions IDE (ex. VS Code, JetBrains).
+
+1.2. Cibles
+Développeurs (web et mobile), intégrateurs HTML/CSS, UX/UI designers, chefs de projet et auditeurs d'accessibilité.
+
+2. Architecture Technique Cible
++-------------------------------------------------------------------+
+|                        COUCHE INTERFACE (UI)                      |
+|   HTML5 Sémantique / CSS3 / JavaScript (ou Framework Web léger)   |
+|   (Adaptable Mobile, Desktop et futur Webview IDE)                |
++-------------------------------------------------------------------+
+                                  |
+               Liaison IPC / Tauri / WebAssembly (Wasm)
+                                  |
++-------------------------------------------------------------------+
+|                      MOTEUR MÉTIER CENTRAL (CORE)                 |
+|                             [Code Rust]                           |
+|  - Moteur de recherche sémantique & filtres                       |
+|  - Gestionnaire de base de données (SQLite / JSON embarqué)       |
+|  - Module de mise à jour & vérification de manifeste (Sync)       |
+|  - API / Connecteurs pour consommation externe (IDE / CLI)        |
++-------------------------------------------------------------------+
+2.1. Pile Technique
+Moteur Métier (Core) : Rust (compilation native, gestion de la mémoire sûre, haute performance, exportable en WebAssembly ou bibliothèque C/FFI).
+
+Runtime & Packaging : Tauri (permet de compiler une application native ultra-légère pour Windows, macOS, Linux, Android et iOS).
+
+Interface Utilisateur (Frontend) : HTML5 sémantique, CSS3 (Tailwind ou CSS moderne) et JavaScript/TypeScript.
+
+Base de données : SQLite embarquée ou fichiers JSON structurés versionnés, gérés exclusivement par le moteur Rust.
+
+2.2. Préparation de l'Interopérabilité Future (IDE)
+Le cœur Rust (crate autonome) sera totalement découplé de la couche graphique Tauri. Il exposera des fonctions d'API internes standardisées (query_articles, filter_by_disability, get_code_examples, check_data_version).
+
+Ce découplage garantit que, dans la phase 2 du projet, ce même cœur pourra être :
+
+Compilé en WebAssembly (WASM) pour alimenter directement une extension VS Code (Webview/Node.js).
+
+Exécuté sous forme de serveur local léger (CLI / LSP / Daemon) pour communiquer avec les IDE de la suite JetBrains ou d'autres éditeurs.
+
+3. Spécifications Fonctionnelles
+3.1. Tri-Accès aux Contenus (Moteur de Recherche & Navigation)
+L'application doit permettre à l'utilisateur de trouver une règle selon 3 angles d'entrée :
+
+Par Référence / Article / Critère :
+
+Recherche par numéro ou libellé du critère RGAA (ex. Critère 1.1 - Images), WCAG ou EN 301 549.   
+RGAA-v4.1.2.odt
+
+Par Besoin Technique / Composant Web :
+
+Filtrage par cas d'usage du quotidien (ex. Formulaires, Contrastes, Navigation clavier, Tableaux complexes, Modales).
+
+Par Type de Handicap / Impact Utilisateur :
+
+Filtrage par situation ou limitation fonctionnelle (ex. Déficience visuelle / Lecteur d'écran, Handicap moteur / Navigation alternative, Troubles cognitifs, Malvoyance / Zoom).
+
+3.2. Fiche Pédagogique Enrichie
+Chaque critère/article de la base est présenté sous forme d'une fiche contenant :
+
+Le texte normatif : Titre officiel du critère et référence réglementaire.
+
+L'explication métier : En langage clair, ce que la règle exige concrètement.
+
+L'impact humain (Cas d'usage usager) : Conséquences concrètes pour la personne concernée si la règle n'est pas respectée (ex. « Sans alternative textuelle sur le bouton image, l'utilisateur d'un lecteur d'écran ne peut pas valider son panier »).   
+RGAA-v4.1.2.odt
+
+Exemples de code comparative :
+
+❌ Mauvaise pratique (Anti-pattern)
+
+✅ Bonne pratique conforme (HTML/ARIA/CSS)
+
+3.3. Gestion du Multilinguisme
+Structure Pivot (Modèle Unifié) : Les clés de critères (RGAA, WCAG, EN 301 549) servent d'identifiants uniques.
+
+Langues supportées : Dictionnaire i18n extensible (Français et Anglais en priorité socle, préparé pour intégrer d'autres traductions européennes).
+
+3.4. Système de Mise à Jour & Synchronisation Des Textes
+Vérification de Version (Manifeste distant) : Au démarrage (ou sur action manuelle), le module Rust interroge un fichier manifeste (ex. JSON hébergé sur un dépôt GitHub ou un serveur dédié).
+
+Téléchargement de paquets de données : Si une mise à jour du RGAA (ex. erratum ou nouvelle version) est publiée, le moteur télécharge le nouveau jeu de données JSON/SQLite sans nécessiter la re-compilation complète de l'application client.   
+RGAA-v4.1.2.odt
+
+Mode Hors-Ligne (Offline First) : L'application reste 100 % opérationnelle hors connexion en s'appuyant sur sa base locale.
+
+3.5. Exemplarité en Accessibilité (A11y de l'Application)
+L'application elle-même doit atteindre un niveau de conformité RGAA / WCAG 2.1 AA irréprochable :
+
+Support complet du lecteur d'écran (NVDA, VoiceOver, TalkBack).   
+RGAA-v4.1.2.odt
+
+Restitution des couleurs et contrastes conforme.   
+RGAA-v4.1.2.odt
+
+Navigation 100 % utilisable au clavier.   
+RGAA-v4.1.2.odt
+
+4. Plan de Développement Pédagogique (Organisé pour les Stagiaires)
+Phase 1 : Architecture Métier & Modélisation Data en Rust (Semaines 1-3)
+Conception du schéma de données JSON / SQLite pour représenter un critère, ses traductions, ses exemples de code et ses impacts usagers.
+
+Développement de la crate Rust a11y-core :
+
+Parsage et stockage de la base de critères (RGAA v4.1.2 / WCAG).   
+RGAA-v4.1.2.odt
+
+Implémentation du moteur de recherche par mots-clés et filtres (Articles, Besoins, Handicaps).
+
+Rédaction des tests unitaires en Rust.
+
+Phase 2 : Module de Synchronisation & API Interne (Semaines 4-5)
+Développement du module de vérification du manifeste de données distant en Rust.
+
+Mise en place de la passerelle IPC entre Rust et le frontend (commands Tauri).
+
+Structuration des façades pour la future compilation WebAssembly (Wasm).
+
+Phase 3 : Développement Frontend Responsive & Accessibilité (Semaines 6-8)
+Création des interfaces UI (vues de recherche, fiches de critères, filtres).
+
+Adaptabilité de la mise en page (Desktop Windows/Linux/Mac et Mobile Android/iOS).
+
+Intégration de la sémantique HTML5, des rôles ARIA et du style CSS accessible.   
+RGAA-v4.1.2.odt
+
+Phase 4 : Audit A11y, Recette & Packaging (Semaines 9-10)
+Audit d'accessibilité de l'application autonome avec les outils du marché et lecteurs d'écran (NVDA/VoiceOver).   
+RGAA-v4.1.2.odt
+
+Correction des anomalies et finalisation de la documentation technique.
+
+Génération des builds multiplateformes (installateurs Windows, paquets Linux, APK Android, etc.).
+
+Ce document est prêt à servir de feuille de route pour le lancement de l'équipe et la préparation des tâches de développement !

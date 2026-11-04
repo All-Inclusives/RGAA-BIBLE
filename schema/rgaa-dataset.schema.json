@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rgaa-dataset.schema.json",
+  "title": "AccessiGuide RGAA dataset",
+  "type": "object",
+  "required": ["schemaVersion", "source", "wcagVersion", "topics", "glossary", "methodologies", "counts"],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "source": {
+      "type": "object",
+      "required": ["repository", "commit", "rgaaVersion", "license", "files"],
+      "properties": {
+        "repository": { "type": "string", "format": "uri" },
+        "commit": { "type": "string", "minLength": 40, "maxLength": 40 },
+        "rgaaVersion": { "type": "string", "const": "4.1.2" },
+        "license": { "type": "string" },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "sha256"],
+            "properties": {
+              "path": { "type": "string" },
+              "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "wcagVersion": {
+      "type": "number"
+    },
+    "topics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "criteria"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[0-9]+$" },
+          "title": { "type": "string", "minLength": 1 },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "official", "editorial"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+                "official": {
+                  "type": "object",
+                  "required": ["number", "title", "tests", "references"],
+                  "properties": {
+                    "number": { "type": "integer", "minimum": 1 },
+                    "title": { "type": "string", "minLength": 1 },
+                    "tests": {
+                      "type": "object",
+                      "minProperties": 1,
+                      "additionalProperties": {
+                        "oneOf": [
+                          { "type": "string" },
+                          {
+                            "type": "array",
+                            "items": { "type": "string" }
+                          }
+                        ]
+                      }
+                    },
+                    "references": {
+                      "type": "array",
+                      "items": { "type": "object" }
+                    }
+                  },
+                  "additionalProperties": true
+                },
+                "editorial": {
+                  "type": "object",
+                  "required": ["fr", "tags", "examples"],
+                  "properties": {
+                    "fr": {
+                      "type": "object",
+                      "required": ["explanation", "userImpact"],
+                      "properties": {
+                        "explanation": { "type": ["string", "null"] },
+                        "userImpact": { "type": ["string", "null"] }
+                      },
+                      "additionalProperties": false
+                    },
+                    "tags": {
+                      "type": "object",
+                      "required": ["components", "disabilitySituations"],
+                      "properties": {
+                        "components": { "type": "array", "items": { "type": "string" } },
+                        "disabilitySituations": { "type": "array", "items": { "type": "string" } }
+                      },
+                      "additionalProperties": false
+                    },
+                    "examples": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": ["language", "bad", "good"],
+                        "properties": {
+                          "language": { "type": "string" },
+                          "bad": { "type": "string" },
+                          "good": { "type": "string" }
+                        },
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "additionalProperties": false
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "glossary": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "bodyHtml"],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "bodyHtml": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "methodologies": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+      "additionalProperties": { "type": "string" }
+    },
+    "counts": {
+      "type": "object",
+      "required": ["topics", "criteria", "tests", "glossaryEntries", "methodologies"],
+      "properties": {
+        "topics": { "type": "integer", "minimum": 1 },
+        "criteria": { "type": "integer", "minimum": 1 },
+        "tests": { "type": "integer", "minimum": 1 },
+        "glossaryEntries": { "type": "integer", "minimum": 1 },
+        "methodologies": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

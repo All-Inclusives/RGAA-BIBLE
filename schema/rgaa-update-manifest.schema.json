@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rgaa-update-manifest.schema.json",
+  "title": "AccessiGuide RGAA update manifest",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "sequence",
+    "rgaaVersion",
+    "sourceCommit",
+    "packageFile",
+    "packageSha256",
+    "packageBytes"
+  ],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "sequence": { "type": "integer", "minimum": 1 },
+    "rgaaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "sourceCommit": { "type": "string", "pattern": "^[a-fA-F0-9]{40}$" },
+    "packageFile": { "type": "string", "pattern": "^rgaa-[0-9]+\\.[0-9]+\\.[0-9]+\\.json$" },
+    "packageSha256": { "type": "string", "pattern": "^[a-fA-F0-9]{64}$" },
+    "packageBytes": { "type": "integer", "minimum": 1 },
+    "signature": { "type": "string", "pattern": "^[a-fA-F0-9]{128}$" }
+  },
+  "additionalProperties": false
+}

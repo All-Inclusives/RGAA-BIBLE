@@ -1,0 +1,43 @@
+name: Publish RGAA dataset
+
+on:
+  workflow_dispatch:
+    inputs:
+      sequence:
+        description: Monotonic dataset release sequence
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build signed dataset package
+        env:
+          A11Y_UPDATE_PRIVATE_KEY: ${{ secrets.A11Y_UPDATE_PRIVATE_KEY }}
+          RELEASE_SEQUENCE: ${{ inputs.sequence }}
+        run: node tools/package-rgaa.js "$RELEASE_SEQUENCE" --require-signature
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SEQUENCE: ${{ inputs.sequence }}
+        run: |
+          release_dir="releases/rgaa-4.1.2/${RELEASE_SEQUENCE}"
+          release_tag="rgaa-data-${RELEASE_SEQUENCE}"
+          gh release create "$release_tag" \
+            "$release_dir/manifest.json" \
+            "$release_dir/rgaa-4.1.2.json" \
+            --title "RGAA dataset ${RELEASE_SEQUENCE}" \
+            --notes "Signed RGAA 4.1.2 dataset package."
