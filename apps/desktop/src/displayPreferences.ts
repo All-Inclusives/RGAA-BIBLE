@@ -1,5 +1,15 @@
 type Theme = "light" | "dark" | "sepia";
-type Palette = "standard" | "blue-amber";
+type Palette =
+	| "standard"
+	| "blue-amber"
+	| "deuteranomaly"
+	| "deuteranopia"
+	| "protanomaly"
+	| "protanopia"
+	| "tritanomaly"
+	| "tritanopia"
+	| "achromatopsia";
+type VisionPalette = Exclude<Palette, "standard" | "blue-amber">;
 type FontFamily =
 	| "system"
 	| "andika"
@@ -30,12 +40,36 @@ const themeSurfaces: Record<Theme, [string, string]> = {
 	sepia: ["#f2e7d2", "#fbf4e6"],
 };
 
+const visionPalettes: Record<VisionPalette, { accent: string; status: string }> = {
+	deuteranomaly: { accent: "#124e96", status: "#8c4b00" },
+	deuteranopia: { accent: "#004b87", status: "#a65300" },
+	protanomaly: { accent: "#3f51a8", status: "#805500" },
+	protanopia: { accent: "#283593", status: "#985000" },
+	tritanomaly: { accent: "#7a3163", status: "#176b58" },
+	tritanopia: { accent: "#70263b", status: "#006b67" },
+	achromatopsia: { accent: "#343a40", status: "#555b61" },
+};
+
 function isTheme(value: unknown): value is Theme {
 	return value === "light" || value === "dark" || value === "sepia";
 }
 
 function isPalette(value: unknown): value is Palette {
-	return value === "standard" || value === "blue-amber";
+	return (
+		value === "standard" ||
+		value === "blue-amber" ||
+		value === "deuteranomaly" ||
+		value === "deuteranopia" ||
+		value === "protanomaly" ||
+		value === "protanopia" ||
+		value === "tritanomaly" ||
+		value === "tritanopia" ||
+		value === "achromatopsia"
+	);
+}
+
+function isVisionPalette(value: Palette): value is VisionPalette {
+	return Object.prototype.hasOwnProperty.call(visionPalettes, value);
 }
 
 function isFontFamily(value: unknown): value is FontFamily {
@@ -132,13 +166,25 @@ function foregroundForAccent(accent: string): string {
 		: "#ffffff";
 }
 
-function statusColor(theme: Theme, palette: Palette): string {
-	if (palette === "blue-amber") {
-		return theme === "dark" ? "#f2ad50" : "#8a4c00";
+function paletteColors(
+	theme: Theme,
+	palette: Palette,
+	accent: string,
+	accentSurfaces: string[],
+): { accent: string; status: string } {
+	const profile = isVisionPalette(palette) ? visionPalettes[palette] : undefined;
+	const profileAccent = profile?.accent ?? accent;
+	let status = profile?.status;
+	if (!status && palette === "blue-amber") {
+		status = theme === "dark" ? "#f2ad50" : "#8a4c00";
 	}
-	if (theme === "dark") return "#4fd1b5";
-	if (theme === "sepia") return "#16725e";
-	return "#0b806d";
+	if (!status) {
+		status = theme === "dark" ? "#4fd1b5" : theme === "sepia" ? "#16725e" : "#0b806d";
+	}
+	return {
+		accent: contrastingTextColor(profileAccent, accentSurfaces),
+		status: contrastingTextColor(status, accentSurfaces),
+	};
 }
 
 export function initializeDisplayPreferences(): void {
@@ -165,14 +211,18 @@ export function initializeDisplayPreferences(): void {
 	}
 
 	function applyPreferences(): void {
-		const accentForeground = foregroundForAccent(preferences.accent);
 		const accentSoft = blend(preferences.accent, themeSurfaces[preferences.theme][1], 0.9);
+		const surfaces = [...themeSurfaces[preferences.theme], accentSoft];
+		const palette = paletteColors(
+			preferences.theme,
+			preferences.palette,
+			preferences.accent,
+			surfaces,
+		);
+		const accentForeground = foregroundForAccent(preferences.accent);
 		root.dataset.theme = preferences.theme;
 		root.dataset.palette = preferences.palette;
-		root.style.setProperty(
-			"--blue",
-			contrastingTextColor(preferences.accent, [...themeSurfaces[preferences.theme], accentSoft]),
-		);
+		root.style.setProperty("--blue", palette.accent);
 		root.style.setProperty("--accent-fill", preferences.accent);
 		root.style.setProperty("--accent-on", accentForeground);
 		root.style.setProperty(
@@ -180,7 +230,7 @@ export function initializeDisplayPreferences(): void {
 			blend(preferences.accent, accentForeground === "#000000" ? "#ffffff" : "#000000", 0.12),
 		);
 		root.style.setProperty("--accent-soft", accentSoft);
-		root.style.setProperty("--status-color", statusColor(preferences.theme, preferences.palette));
+		root.style.setProperty("--status-color", palette.status);
 		root.style.setProperty("--font-family", fontFamilies[preferences.font]);
 		themeControl.value = preferences.theme;
 		paletteControl.value = preferences.palette;

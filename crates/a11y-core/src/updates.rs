@@ -242,6 +242,14 @@ pub fn load_from_update_store(
     validate_package(&manifest, &package_bytes).map(Some)
 }
 
+/// Returns metadata for the highest-sequence installed update, if one exists.
+pub fn latest_installed_update(
+    store_dir: impl AsRef<Path>,
+) -> Result<Option<InstalledUpdate>, UpdateError> {
+    Ok(latest_manifest(store_dir.as_ref())?
+        .map(|(directory, manifest)| installed_update(directory, &manifest)))
+}
+
 /// Uses the newest validated local update, or the embedded corpus when the
 /// update store has no installed releases. Store errors are surfaced.
 pub fn load_or_bundled(store_dir: impl AsRef<Path>) -> Result<A11yCore, UpdateError> {
@@ -514,6 +522,13 @@ mod tests {
         let installed = install_update(&store, &manifest, &package).unwrap();
         assert_eq!(installed.sequence, 1);
         assert_eq!(
+            latest_installed_update(&store)
+                .unwrap()
+                .unwrap()
+                .sequence,
+            1
+        );
+        assert_eq!(
             load_from_update_store(&store)
                 .unwrap()
                 .unwrap()
@@ -658,6 +673,7 @@ mod tests {
         let store = test_store();
         fs::create_dir_all(store.join(".staging-1-interrupted")).unwrap();
         assert!(load_from_update_store(&store).unwrap().is_none());
+        assert!(latest_installed_update(&store).unwrap().is_none());
         assert_eq!(
             load_or_bundled(&store).unwrap().dataset().counts.criteria,
             106

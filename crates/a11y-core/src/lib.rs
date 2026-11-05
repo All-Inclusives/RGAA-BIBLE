@@ -17,7 +17,7 @@ mod updates;
 
 pub use updates::{
     InstalledUpdate, UpdateError, UpdateManifest, install_signed_update, install_update,
-    load_from_update_store, load_or_bundled, load_signed_or_bundled,
+    latest_installed_update, load_from_update_store, load_or_bundled, load_signed_or_bundled,
 };
 
 const BUNDLED_DATA: &str = include_str!("../../../data/rgaa-4.1.2.json");

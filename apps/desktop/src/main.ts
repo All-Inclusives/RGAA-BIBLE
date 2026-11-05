@@ -41,6 +41,14 @@ type Dataset = {
 	counts: { criteria: number; tests: number };
 };
 
+type DatasetInfo = Pick<Dataset, "methodologies" | "counts">;
+
+type UpdateCheckResult = {
+	updated: boolean;
+	sequence: number | null;
+	rgaaVersion: string | null;
+};
+
 const elements = {
 	form: document.querySelector<HTMLFormElement>("#search-form")!,
 	search: document.querySelector<HTMLInputElement>("#search-input")!,
@@ -55,6 +63,8 @@ const elements = {
 	dialogEyebrow: document.querySelector<HTMLParagraphElement>("#dialog-eyebrow")!,
 	dialogContent: document.querySelector<HTMLDivElement>("#dialog-content")!,
 	announcement: document.querySelector<HTMLDivElement>("#announcement")!,
+	checkUpdates: document.querySelector<HTMLButtonElement>("#check-updates")!,
+	updateStatus: document.querySelector<HTMLParagraphElement>("#dataset-update-status")!,
 };
 
 const runtimeIsTauri = isTauri();
@@ -99,16 +109,19 @@ function searchableText(value: unknown): string {
 }
 
 async function loadDataset(): Promise<Dataset> {
+	if (runtimeIsTauri) {
+		const [topics, info] = await Promise.all([
+			invoke<Topic[]>("list_topics"),
+			invoke<DatasetInfo>("get_dataset_info"),
+		]);
+		return { topics, ...info };
+	}
+
 	const response = await fetch("/rgaa-4.1.2.json");
 	if (!response.ok) {
 		throw new Error(`Impossible de charger le corpus RGAA (${response.status}).`);
 	}
 	return (await response.json()) as Dataset;
-}
-
-async function listTopics(): Promise<Topic[]> {
-	if (runtimeIsTauri) return invoke<Topic[]>("list_topics");
-	return dataset?.topics ?? (await loadDataset()).topics;
 }
 
 async function search(criteria: { text: string; topicId: string }): Promise<SearchResult[]> {
@@ -353,17 +366,45 @@ function resetSearch(): void {
 
 async function initialize(): Promise<void> {
 	initializeDisplayPreferences();
+	elements.checkUpdates.disabled = !runtimeIsTauri;
+	if (!runtimeIsTauri) {
+		elements.updateStatus.textContent = "La vérification est disponible dans l’application Windows.";
+	}
 	const searchShortcut = document.querySelector<HTMLElement>("#search-shortcut");
 	if (searchShortcut) {
 		searchShortcut.textContent = /Macintosh|Mac OS X/.test(navigator.userAgent) ? "⌘ K" : "Ctrl K";
 	}
 	try {
 		dataset = await loadDataset();
-		addTopics(await listTopics());
+		addTopics(dataset.topics);
 		await updateResults();
 	} catch (error) {
 		showError(error instanceof Error ? error.message : "Une erreur inattendue est survenue.");
 	}
+
+	elements.checkUpdates.addEventListener("click", async () => {
+		elements.checkUpdates.disabled = true;
+		elements.updateStatus.textContent = "Recherche des mises à jour…";
+		try {
+			const result = await invoke<UpdateCheckResult>("check_for_updates");
+			if (result.updated) {
+				const info = await invoke<DatasetInfo>("get_dataset_info");
+				if (!dataset) throw new Error("Le corpus RGAA n’est pas encore chargé.");
+				dataset = { ...dataset, ...info };
+				await updateResults();
+				elements.updateStatus.textContent = `Corpus RGAA ${result.rgaaVersion} mis à jour (séquence ${result.sequence}).`;
+			} else if (result.sequence === null) {
+				elements.updateStatus.textContent = "Aucune mise à jour des données n’est publiée pour le moment.";
+			} else {
+				elements.updateStatus.textContent = `Le corpus RGAA ${result.rgaaVersion} (séquence ${result.sequence}) est déjà à jour.`;
+			}
+		} catch (error) {
+			elements.updateStatus.textContent =
+				error instanceof Error ? error.message : "La vérification des mises à jour a échoué.";
+		} finally {
+			elements.checkUpdates.disabled = false;
+		}
+	});
 
 	elements.form.addEventListener("submit", (event) => {
 		event.preventDefault();

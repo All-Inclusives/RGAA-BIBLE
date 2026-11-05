@@ -2,8 +2,8 @@
 
 > Document de pilotage vivant : il fixe les étapes et les critères de validation du projet. Il sera mis à jour à chaque jalon, décision importante ou changement de périmètre.
 
-**Version :** 1.5 — **Date :** 5 novembre 2026
-**Statut général :** jalons 0 à 3 livrés, hors configuration des clés/téléchargement distant ; interface et fonctionnement hors ligne du jalon 4 validés ; recette du jalon 5 en cours, préférences d’affichage intégrées et premier défaut de focus corrigé.
+**Version :** 1.7 — **Date :** 5 novembre 2026
+**Statut général :** interface, consultation hors ligne et recette manuelle du jalon 4 validées ; recette du jalon 5 avancée avec profils de repérage en cours de validation ; téléchargement des mises à jour signées intégré, en attente de configuration des clés et d’une Release signée.
 **Cahier des charges :** `Cahier des charges RGAA BIBLE .txt`
 
 ## 1. Vision et objectif
@@ -154,10 +154,10 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - [x] Préparer un workflow manuel GitHub Actions qui génère un paquet signé et publie les assets sous un tag de Release déterministe.
 - [x] Initialiser le dépôt GitHub puis y publier le code du projet et le workflow ; vérifier le commit distant et la disponibilité du workflow.
 - [ ] Générer une paire de clés hors du dépôt, enregistrer la clé privée comme secret GitHub Actions et configurer uniquement la clé publique dans l’application.
-- [ ] Raccorder la découverte/téléchargement des Releases au client Tauri ; exiger une signature valide avant installation.
+- [x] Raccorder la découverte/téléchargement des Releases au client Tauri ; exiger une signature valide avant installation.
 
 **Livrables réalisés :** formats de manifeste et paquet, générateur, vérification Ed25519, installation locale versionnée et tests.  
-**Dépendance restante :** le workflow est publié, mais les clés GitHub Actions / application ne sont pas configurées et le téléchargement réseau n’est pas encore raccordé. Aucune Release n’a été créée.
+**Dépendance restante :** le client Tauri recherche et installe les Releases signées, mais la clé publique de compilation et le secret GitHub Actions ne sont pas configurés ; aucune Release signée n’a été créée. Sans clé publique, le bouton explique explicitement la configuration manquante et le corpus embarqué reste utilisé.
 
 ### Jalon 4 — Interface Tauri
 
@@ -187,22 +187,22 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 |---|---|---|
 | Clavier et focus | Tous les contrôles sont atteignables ; indicateur de focus visible ; les dialogues se ferment par Échap et restituent le focus. | Aperçu navigateur validé ; indicateur de 3 px ajouté au formulaire de recherche. |
 | Lecteurs d’écran | Titres, régions, noms des contrôles et annonces de résultats, préférences et erreurs sont compréhensibles avec NVDA et Narrateur Windows. | Retest NVDA et Narrateur réussi selon le commanditaire le 5 novembre 2026. |
-| Zoom et responsive | À 200 % et à 320 px CSS, contenu et commandes restent utilisables sans défilement horizontal. | Commanditaire : loupe Windows à 200 % validée ; zoom de mise en page à 200 % et 320 px restent à vérifier ensemble. |
-| Contraste | Texte ≥ 4,5:1 ; indicateurs et composants non textuels ≥ 3:1 dans les trois thèmes et avec un accent personnalisé. | Contraste du focus clavier mesuré dans l’aperçu : 7,12:1 (clair), 9,40:1 (sombre), 8,02:1 (sépia) ; vérification générale à poursuivre. |
-| Parcours et erreurs | Recherche, filtres, ouverture/fermeture de fiche, préférences, états vides et erreurs sont utilisables et annoncés. | Recherche, dialogue, préférences et erreur HTTP 500 vérifiés dans l’aperçu ; recette sur l’exécutable à compléter. |
+| Zoom et responsive | À 200 % et à 320 px CSS, contenu et commandes restent utilisables sans défilement horizontal. | Commanditaire : loupe Windows à 200 % validée. Dans l’aperçu, largeurs CSS 640 px (viewport équivalente à 200 % sur 1280 px) et 320 px contrôlées sans débordement horizontal. |
+| Contraste | Texte ≥ 4,5:1 ; indicateurs et composants non textuels ≥ 3:1 dans les trois thèmes et avec un accent personnalisé. | Contraste du focus clavier mesuré dans l’aperçu : 7,12:1 (clair), 9,40:1 (sombre), 8,02:1 (sépia). Les sept profils sont ajoutés ; leurs 21 combinaisons avec les thèmes sont à vérifier. |
+| Parcours et erreurs | Recherche, filtres, ouverture/fermeture de fiche, préférences, états vides et erreurs sont utilisables et annoncés. | Recherche, dialogue, préférences et erreur HTTP 500 vérifiés dans l’aperçu ; hors ligne validé sur l’application Windows par le commanditaire. |
 | Hors ligne | Le corpus embarqué reste disponible sans réseau, sans altérer la connexion de l’utilisateur. | Commanditaire : fonctionnement hors ligne pleinement validé sur l’application Windows le 5 novembre 2026. |
 
 - [x] Définir une matrice de tests clavier, lecteur d’écran, zoom, contraste et responsive.
 - [x] Tester avec les technologies d’assistance pertinentes pour les plateformes effectivement prises en charge : NVDA et Narrateur Windows validés sur Windows ; VoiceOver et TalkBack ne sont pas concernés par la cible desktop actuelle.
-- [ ] Effectuer les tests automatisés disponibles, puis une revue manuelle : l’automatisation seule ne prouve pas la conformité.
+- [x] Effectuer les tests automatisés disponibles, puis une revue manuelle : smoke test Playwright de la langue, du titre principal, des noms de contrôles, textes alternatifs, identifiants, dialogues et débordements à 640/320 px ; complété par les retests manuels du commanditaire. Aucun scanner WCAG dédié n’est configuré ; ces contrôles ne prouvent pas à eux seuls la conformité.
 - [x] Vérifier le contraste des textes et contrôles principaux dans les trois thèmes et avec un accent personnalisé ; seuil mesuré supérieur ou égal à 4,5:1 dans les cas contrôlés.
-- [ ] Vérifier les parcours critiques et les annonces d’état, les titres, le focus et les messages d’erreur.
-- [ ] Traiter les anomalies bloquantes et documenter les limites connues.
+- [x] Vérifier les parcours critiques et les annonces d’état, les titres, le focus et les messages d’erreur.
+- [x] Traiter les anomalies bloquantes et documenter les limites connues.
 - [x] Inventorier les polices fournies et implémenter les préférences locales de thème, accent et typographie avec un garde-fou de contraste ; les fontes libres utilisées sont embarquées et persistées localement.
-- [ ] Valider les palettes de couleurs avec des personnes concernées, sans transmettre d’information par la couleur seule. La palette bleu et ambre actuelle est une alternative de repérage, pas une simulation universelle du daltonisme.
+- [ ] Valider les sept nouveaux profils de repérage avec des personnes concernées, sans transmettre d’information par la couleur seule. Le commanditaire confirme que la validation initiale de la palette bleu et ambre est acquise ; les profils supplémentaires ne sont pas des simulations universelles du daltonisme.
 - [x] Vérifier que les préférences restent appliquées après redémarrage de l’application desktop.
 - [x] N’embarquer que les fichiers de polices dont les droits d’utilisation ont été confirmés ; ne pas redistribuer les fontes système.
-- [ ] Générer les builds et documenter installation, mise à jour, sources de données et contribution.
+- [x] Générer les builds et documenter installation, mise à jour, sources de données et contribution dans `apps/desktop/README.md`. Les mises à jour distantes restent non raccordées ; les artefacts locaux ne sont pas signés.
 
 **Livrables :** rapport de recette, anomalies traitées ou suivies, documentation utilisateur et technique, builds ciblés.  
 **Sortie du jalon :** les parcours essentiels passent les tests définis et les builds ciblés sont reproductibles.
@@ -246,7 +246,7 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - Mettre à jour les cases à cocher uniquement après vérification du livrable correspondant.
 - À chaque fin de jalon, noter ici la date, le résultat, les écarts et les décisions prises.
 - Si le périmètre ou une hypothèse structurante change, mettre à jour les sections concernées et la version du document.
-- Prochaine action recommandée : poursuivre la recette du **jalon 5** (zoom de mise en page à 200 %, contrôles automatisés et revue manuelle, validation des palettes et documentation des builds). La configuration des clés et du téléchargement des Releases reste une étape séparée, à réaliser avant d’activer les mises à jour distantes.
+- Prochaine action recommandée : valider les sept nouveaux profils de repérage (contraste dans les trois thèmes et retours utilisateurs), puis configurer la paire de clés et publier une Release signée pour tester le parcours de mise à jour de bout en bout.
 
 ### Journal des jalons
 
@@ -273,3 +273,6 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 | 5 novembre 2026 | Jalon 5 — audit clavier et annonces | La recette navigateur a révélé que le champ de recherche neutralisait son contour de focus sans indicateur de remplacement suffisant ; un contour de 3 px avec contraste mesuré supérieur à 7:1 a été ajouté dans les trois thèmes. Les erreurs de chargement transmettent maintenant leur message complet dans la région de statut annoncée. Recherche « contraste » (3 résultats), ouverture/fermeture de fiche avec restitution du focus, préférences et Échap, erreur HTTP 500 et affichage à 320 px validés dans l’aperçu. `npm run build` et `npm run tauri build` passent ; l’exécutable et les installateurs Windows sont générés. Retest NVDA/Narrateur, zoom 200 %, vérification automatisée et recette hors ligne restent à faire. |
 | 5 novembre 2026 | Jalon 5 — retests lecteurs d’écran et loupe | Le commanditaire confirme que le retest avec NVDA et le Narrateur Windows fonctionne, et que la loupe Windows est utilisable avec un grossissement à 200 %. Le zoom de mise en page à 200 % reste à vérifier séparément. |
 | 5 novembre 2026 | Jalon 4 — fonctionnement hors ligne validé | Le commanditaire confirme que le fonctionnement hors ligne de l’application est pleinement fonctionnel. Le parcours hors ligne est validé sans déconnecter le PC ni interrompre les autres services. |
+| 5 novembre 2026 | Jalon 3 — client de mises à jour signées | L’application Windows expose une vérification manuelle des Releases de données GitHub, limite les téléchargements, n’accepte que les assets attendus du dépôt, vérifie la signature Ed25519 avant le paquet et installe via le mécanisme atomique du cœur. Le corpus actif est remplacé seulement après validation et reste disponible hors ligne. La clé publique est injectée à la compilation par `A11Y_UPDATE_PUBLIC_KEY` ; aucune clé n’est fournie dans le dépôt et aucune Release signée n’existe encore, donc le test réseau de bout en bout attend la configuration par le commanditaire. |
+| 5 novembre 2026 | Jalon 5 — profils de repérage couleur | Avec l’accord du commanditaire, sept profils (formes partielles et totales rouge-vert et bleu-jaune, et achromatopsie) sont ajoutés au sélecteur. Ce sont des palettes ajustant les accents et repères, pas des filtres de simulation ni des garanties universelles. La palette bleu et ambre initiale est validée par des personnes concernées ; la recette de contraste des nouveaux profils dans les trois thèmes et leur validation utilisateur restent à réaliser. |
+| 5 novembre 2026 | Jalon 5 — recette de base et documentation | Le retest NVDA/Narrateur et la loupe Windows à 200 % sont confirmés par le commanditaire. Des smoke tests Playwright vérifient la langue, le titre principal, les noms des contrôles visibles, les textes alternatifs, l’unicité des identifiants, les noms de dialogues ouverts et l’absence de débordement horizontal à 640 et 320 px CSS. Les parcours recherche, filtres, dialogues, préférences, retour du focus et annonce d’une erreur sont exercés dans l’aperçu ; le fonctionnement hors ligne est validé sur l’exécutable par le commanditaire. Le README desktop documente maintenant l’installation locale, la disponibilité des données, l’absence actuelle de mises à jour distantes et les commandes de contribution. Limites restantes : pas de scanner WCAG dédié configuré, palette à valider avec des personnes concernées, et installateurs non signés pour la distribution publique. |

@@ -21,9 +21,43 @@ npm run tauri build
 
 Les installateurs MSI et NSIS sont générés sous `src-tauri/target/release/bundle`. L’application desktop charge le corpus RGAA embarqué et reste consultable hors ligne.
 
+Pour installer le build local, ouvrez le fichier MSI dans `src-tauri/target/release/bundle/msi` ou le programme d’installation NSIS dans `src-tauri/target/release/bundle/nsis`. Ces paquets x64 sont des artefacts de développement ; ils ne sont pas signés pour une distribution publique.
+
+## Données et mises à jour
+
+Le corpus RGAA 4.1.2 est embarqué dans l’application. La recherche et les fiches restent disponibles sans connexion. Dans l’application Windows, **Vérifier les mises à jour** recherche la dernière Release `rgaa-data-<séquence>` du dépôt GitHub, vérifie la signature Ed25519 du manifeste puis l’intégrité et la provenance du corpus avant installation. Une mise à jour valide est activée immédiatement ; le corpus embarqué reste disponible si aucune mise à jour locale n’existe.
+
+La vérification distante nécessite la configuration de la clé de production. La clé publique Ed25519 (32 octets en 64 caractères hexadécimaux) est injectée à la compilation dans `A11Y_UPDATE_PUBLIC_KEY`, par exemple dans PowerShell avant le build :
+
+```powershell
+$env:A11Y_UPDATE_PUBLIC_KEY = "<64 caractères hexadécimaux de la clé publique>"
+npm run tauri build
+```
+
+La clé privée PEM correspondante doit être ajoutée uniquement comme secret GitHub Actions `A11Y_UPDATE_PRIVATE_KEY` pour publier une Release avec le workflow existant. Ne placez jamais la clé privée dans le dépôt ni dans les paramètres de build. Tant qu’une clé correspondante et une Release signée ne sont pas disponibles, l’application signale cette configuration manquante et continue d’utiliser le corpus embarqué ; aucun téléchargement non signé n’est accepté.
+
+La provenance des données et les licences du corpus et des polices tierces sont décrites dans [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). Pour régénérer le corpus depuis le dépôt source officiel déjà cloné à la racine du projet, exécutez `node tools/import-rgaa.js`.
+
+## Vérifications et contribution
+
+Depuis la racine du dépôt, lancez les tests du cœur Rust :
+
+```powershell
+cargo test --workspace
+```
+
+Depuis `apps/desktop`, validez le frontend et générez les paquets Windows :
+
+```powershell
+npm run build
+npm run tauri build
+```
+
+Pour contribuer, gardez séparés le texte normatif officiel et les contenus éditoriaux, conservez la provenance des données et leurs mentions de licence, puis vérifiez les changements avec les commandes ci-dessus. Les préférences et la revue d’accessibilité doivent également être testées lors de toute modification de l’interface.
+
 ## Préférences d’affichage
 
-Le panneau **Affichage** permet de choisir une ambiance claire, sombre ou sépia, une palette de repères bleu et ambre, une couleur d’accentuation et une typographie (police système, Andika, Atkinson Hyperlegible, Lexend, Luciole, OpenDyslexic ou Ubuntu). Les choix sont conservés localement. La teinte utilisée pour le texte d’accentuation est ajustée pour maintenir un contraste lisible. La palette bleu et ambre est une alternative de repérage, pas une simulation du daltonisme ni une garantie adaptée à toutes les formes de déficience de la vision des couleurs.
+Le panneau **Affichage** permet de choisir une ambiance claire, sombre ou sépia, une palette de repérage (classique, bleu et ambre, ou un des sept profils deutéranomalie, deutéranopie, protanomalie, protanopie, tritanomalie, tritanopie et achromatopsie), une couleur d’accentuation et une typographie (police système, Andika, Atkinson Hyperlegible, Lexend, Luciole, OpenDyslexic ou Ubuntu). Les choix sont conservés localement. Les profils ajustent les couleurs d’accent et de repérage, sans simuler la vision ni garantir une réponse universelle ; les libellés et symboles ne reposent pas sur la couleur seule. La palette bleu et ambre a été validée par des personnes concernées ; la validation des sept nouveaux profils reste à faire.
 
 Les fontes WOFF2 utilisées sont embarquées pour le fonctionnement hors ligne. Les fichiers de polices système du dossier ne sont pas redistribués ; le choix « Police système » utilise les fontes installées sur l’appareil. Les familles et licences documentées sont recensées dans [`assets/fonts/readme.md`](../../assets/fonts/readme.md). La licence MIT à la racine couvre le code AccessiGuide, pas le corpus ni les fontes tierces ; voir [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). La palette et les réglages de contraste doivent encore être validés avec des personnes concernées et des technologies d’assistance.
 

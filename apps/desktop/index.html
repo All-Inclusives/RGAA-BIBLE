@@ -180,12 +180,27 @@
           </select>
         </label>
         <label class="preference-field" for="palette-choice">
-          <span>Palette de repères</span>
+          <span>Profil de repérage des couleurs</span>
           <select id="palette-choice" name="palette">
-            <option value="standard">Classique</option>
-            <option value="blue-amber">Bleu et ambre (palette alternative)</option>
+            <optgroup label="Généraux">
+              <option value="standard">Classique</option>
+              <option value="blue-amber">Bleu et ambre</option>
+            </optgroup>
+            <optgroup label="Rouge-vert">
+              <option value="deuteranomaly">Deutéranomalie (partielle)</option>
+              <option value="deuteranopia">Deutéranopie (totale)</option>
+              <option value="protanomaly">Protanomalie (partielle)</option>
+              <option value="protanopia">Protanopie (totale)</option>
+            </optgroup>
+            <optgroup label="Bleu-jaune">
+              <option value="tritanomaly">Tritanomalie (partielle)</option>
+              <option value="tritanopia">Tritanopie (totale)</option>
+            </optgroup>
+            <optgroup label="Nuances de gris">
+              <option value="achromatopsia">Achromatopsie</option>
+            </optgroup>
           </select>
-          <span class="preference-help">Cette palette n’est pas une simulation du daltonisme. Les libellés restent présents et aucune information ne repose sur la couleur seule.</span>
+          <span class="preference-help">Ces profils ajustent les couleurs d’accent et de repérage ; ils ne simulent pas la vision et ne remplacent pas une validation individuelle. L’accent personnalisé des boutons reste indépendant. Les libellés et symboles ne reposent pas sur la couleur seule.</span>
         </label>
         <label class="preference-field" for="accent-choice">
           <span>Couleur d’accentuation</span>
@@ -205,6 +220,11 @@
           </select>
           <span class="preference-help">Les polices intégrées restent disponibles hors ligne. Le choix s’applique à l’ensemble de l’interface.</span>
         </label>
+        <div class="preference-field">
+          <span id="dataset-update-label">Données du référentiel</span>
+          <button class="secondary-button" id="check-updates" type="button" aria-describedby="dataset-update-status">Vérifier les mises à jour</button>
+          <p class="preference-help" id="dataset-update-status" role="status" aria-live="polite" aria-atomic="true"></p>
+        </div>
         <p class="preference-status" id="preference-status" role="status" aria-live="polite" aria-atomic="true"></p>
       </form>
     </dialog>
