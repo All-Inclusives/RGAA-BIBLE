@@ -2,8 +2,8 @@
 
 > Document de pilotage vivant : il fixe les étapes et les critères de validation du projet. Il sera mis à jour à chaque jalon, décision importante ou changement de périmètre.
 
-**Version :** 1.4 — **Date :** 4 novembre 2026
-**Statut général :** jalons 0 à 3 livrés, hors configuration des clés/téléchargement distant ; jalon 4 en recette, test hors ligne en attente ; jalon 5 engagé, préférences de thème, d’accent et de typographie intégrées.
+**Version :** 1.5 — **Date :** 5 novembre 2026
+**Statut général :** jalons 0 à 3 livrés, hors configuration des clés/téléchargement distant ; interface et fonctionnement hors ligne du jalon 4 validés ; recette du jalon 5 en cours, préférences d’affichage intégrées et premier défaut de focus corrigé.
 **Cahier des charges :** `Cahier des charges RGAA BIBLE .txt`
 
 ## 1. Vision et objectif
@@ -171,7 +171,7 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - [x] Vérifier le build et le démarrage de l’application Windows x64 ; le cœur charge le corpus embarqué hors ligne.
 
 **Livrables en cours :** parcours MVP, intégration cœur/UI, aperçu navigateur et installateurs Windows x64 (MSI et NSIS) dans `apps/desktop/src-tauri/target/release/bundle`.
-**Validation :** `npm run build`, `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml` et `npm run tauri build` passent. Le lancement de l’exécutable Tauri est vérifié ; le cœur charge son corpus embarqué via `A11yCore::from_bundled`. Dans l’aperçu, 106 critères se chargent, la recherche « contraste » renvoie 3 résultats et la fiche s’ouvre. À 320 px, aucun débordement horizontal après correction ; au clavier, le dialogue reçoit le focus, Échap le ferme et le focus revient à la carte. Recette manuelle du commanditaire sur l’application desktop : clavier, recherches accentuées et par référence, filtres, fiches et tests ainsi que réduction maximale de la fenêtre validés. Le fonctionnement hors ligne n’a pas encore pu être testé ; la recette lecteur d’écran reste à faire.
+**Validation :** `npm run build`, `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml` et `npm run tauri build` passent. Le lancement de l’exécutable Tauri est vérifié ; le cœur charge son corpus embarqué via `A11yCore::from_bundled`. Dans l’aperçu, 106 critères se chargent, la recherche « contraste » renvoie 3 résultats et la fiche s’ouvre. À 320 px, aucun débordement horizontal après correction ; au clavier, le dialogue reçoit le focus, Échap le ferme et le focus revient à la carte. Recette manuelle du commanditaire sur l’application desktop : clavier, recherches accentuées et par référence, filtres, fiches, tests, réduction maximale de la fenêtre et fonctionnement hors ligne validés.
 
 ### Jalon 5 — Accessibilité, recette et publication
 
@@ -181,7 +181,18 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 
 **Inventaire initial des polices (4 novembre 2026) :** `assets/fonts/` contient 96 fichiers WOFF2 : Andika, Atkinson Hyperlegible (dont Next et Mono), Lexend, Luciole, OpenDyslexic (dont Alta et Mono), Ubuntu et des variantes de polices système (Arial, Calibri, Comic Sans MS, Trebuchet MS, Verdana). Les licences des familles libres ont été confirmées par le commanditaire pour cet usage. Les fontes système ne sont pas redistribuées ; le choix système utilise celles installées sur le poste.
 
-- [ ] Définir une matrice de tests clavier, lecteur d’écran, zoom, contraste et responsive.
+**Matrice de recette d’accessibilité (5 novembre 2026) :**
+
+| Axe | Vérifications et critères de réussite | État |
+|---|---|---|
+| Clavier et focus | Tous les contrôles sont atteignables ; indicateur de focus visible ; les dialogues se ferment par Échap et restituent le focus. | Aperçu navigateur validé ; indicateur de 3 px ajouté au formulaire de recherche. |
+| Lecteurs d’écran | Titres, régions, noms des contrôles et annonces de résultats, préférences et erreurs sont compréhensibles avec NVDA et Narrateur Windows. | Retest NVDA et Narrateur réussi selon le commanditaire le 5 novembre 2026. |
+| Zoom et responsive | À 200 % et à 320 px CSS, contenu et commandes restent utilisables sans défilement horizontal. | Commanditaire : loupe Windows à 200 % validée ; zoom de mise en page à 200 % et 320 px restent à vérifier ensemble. |
+| Contraste | Texte ≥ 4,5:1 ; indicateurs et composants non textuels ≥ 3:1 dans les trois thèmes et avec un accent personnalisé. | Contraste du focus clavier mesuré dans l’aperçu : 7,12:1 (clair), 9,40:1 (sombre), 8,02:1 (sépia) ; vérification générale à poursuivre. |
+| Parcours et erreurs | Recherche, filtres, ouverture/fermeture de fiche, préférences, états vides et erreurs sont utilisables et annoncés. | Recherche, dialogue, préférences et erreur HTTP 500 vérifiés dans l’aperçu ; recette sur l’exécutable à compléter. |
+| Hors ligne | Le corpus embarqué reste disponible sans réseau, sans altérer la connexion de l’utilisateur. | Commanditaire : fonctionnement hors ligne pleinement validé sur l’application Windows le 5 novembre 2026. |
+
+- [x] Définir une matrice de tests clavier, lecteur d’écran, zoom, contraste et responsive.
 - [x] Tester avec les technologies d’assistance pertinentes pour les plateformes effectivement prises en charge : NVDA et Narrateur Windows validés sur Windows ; VoiceOver et TalkBack ne sont pas concernés par la cible desktop actuelle.
 - [ ] Effectuer les tests automatisés disponibles, puis une revue manuelle : l’automatisation seule ne prouve pas la conformité.
 - [x] Vérifier le contraste des textes et contrôles principaux dans les trois thèmes et avec un accent personnalisé ; seuil mesuré supérieur ou égal à 4,5:1 dans les cas contrôlés.
@@ -235,7 +246,7 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - Mettre à jour les cases à cocher uniquement après vérification du livrable correspondant.
 - À chaque fin de jalon, noter ici la date, le résultat, les écarts et les décisions prises.
 - Si le périmètre ou une hypothèse structurante change, mettre à jour les sections concernées et la version du document.
-- Prochaine action recommandée : terminer la recette du **jalon 5** (matrice d’accessibilité, contrôles automatisés et revue manuelle, validation des palettes et documentation des builds). Reprendre également le test hors ligne reporté au jalon 4. La configuration des clés et du téléchargement des Releases reste une étape séparée, à réaliser avant d’activer les mises à jour distantes.
+- Prochaine action recommandée : poursuivre la recette du **jalon 5** (zoom de mise en page à 200 %, contrôles automatisés et revue manuelle, validation des palettes et documentation des builds). La configuration des clés et du téléchargement des Releases reste une étape séparée, à réaliser avant d’activer les mises à jour distantes.
 
 ### Journal des jalons
 
@@ -259,3 +270,6 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 | 4 novembre 2026 | Jalon 5 — préférences et contraste du mode sombre | Après redémarrage de la fenêtre desktop, le commanditaire confirme que les préférences d’apparence sont conservées et valide la palette sépia. Les libellés « Test x.x.x », « Méthodologie » et la version RGAA de l’en-tête en mode sombre utilisent désormais la couleur d’accentuation ajustée pour le contraste. |
 | 4 novembre 2026 | Jalon 5 — intégration des typographies | Le commanditaire confirme les droits d’utilisation des fontes libres du dossier. Andika, Atkinson Hyperlegible, Lexend, Luciole, OpenDyslexic et Ubuntu sont intégrées à l’application desktop en variantes régulière et grasse ; le choix de typographie est persisté localement et les fontes système ne sont pas redistribuées. `npm run build` passe ; le chargement effectif des six familles et l’application des sept choix (dont la police système) sont vérifiés dans l’aperçu navigateur. |
 | 4 novembre 2026 | Licence du code AccessiGuide | Le commanditaire choisit MIT pour le code AccessiGuide, avec attribution à ALL-Inclusive / Bruno ECARD. Le corpus RGAA et les polices tierces conservent leurs licences propres, documentées dans `THIRD_PARTY_NOTICES.md`. |
+| 5 novembre 2026 | Jalon 5 — audit clavier et annonces | La recette navigateur a révélé que le champ de recherche neutralisait son contour de focus sans indicateur de remplacement suffisant ; un contour de 3 px avec contraste mesuré supérieur à 7:1 a été ajouté dans les trois thèmes. Les erreurs de chargement transmettent maintenant leur message complet dans la région de statut annoncée. Recherche « contraste » (3 résultats), ouverture/fermeture de fiche avec restitution du focus, préférences et Échap, erreur HTTP 500 et affichage à 320 px validés dans l’aperçu. `npm run build` et `npm run tauri build` passent ; l’exécutable et les installateurs Windows sont générés. Retest NVDA/Narrateur, zoom 200 %, vérification automatisée et recette hors ligne restent à faire. |
+| 5 novembre 2026 | Jalon 5 — retests lecteurs d’écran et loupe | Le commanditaire confirme que le retest avec NVDA et le Narrateur Windows fonctionne, et que la loupe Windows est utilisable avec un grossissement à 200 %. Le zoom de mise en page à 200 % reste à vérifier séparément. |
+| 5 novembre 2026 | Jalon 4 — fonctionnement hors ligne validé | Le commanditaire confirme que le fonctionnement hors ligne de l’application est pleinement fonctionnel. Le parcours hors ligne est validé sans déconnecter le PC ni interrompre les autres services. |

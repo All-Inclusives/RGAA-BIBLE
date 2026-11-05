@@ -531,7 +531,9 @@ h1 span {
 
 .search-form:focus-within {
   border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgb(70 98 220 / 10%);
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  box-shadow: none;
 }
 
 kbd {

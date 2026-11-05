@@ -235,7 +235,7 @@ function showError(message: string): void {
 	elements.empty.hidden = false;
 	elements.empty.querySelector("h4")!.textContent = "Le référentiel n’a pas pu être chargé";
 	elements.empty.querySelector("p")!.textContent = message;
-	elements.count.textContent = "Erreur de chargement";
+	elements.count.textContent = message;
 }
 
 async function updateResults(): Promise<void> {
