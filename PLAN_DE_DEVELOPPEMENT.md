@@ -2,8 +2,8 @@
 
 > Document de pilotage vivant : il fixe les étapes et les critères de validation du projet. Il sera mis à jour à chaque jalon, décision importante ou changement de périmètre.
 
-**Version :** 0.8 — **Date :** 4 novembre 2026  
-**Statut général :** jalons 0, 1 et 2 terminés ; socle et pipeline de publication du jalon 3 poussés, clés et téléchargement distant à raccorder  
+**Version :** 1.4 — **Date :** 4 novembre 2026
+**Statut général :** jalons 0 à 3 livrés, hors configuration des clés/téléchargement distant ; jalon 4 en recette, test hors ligne en attente ; jalon 5 engagé, préférences de thème, d’accent et de typographie intégrées.
 **Cahier des charges :** `Cahier des charges RGAA BIBLE .txt`
 
 ## 1. Vision et objectif
@@ -163,25 +163,34 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 
 **Objectif :** permettre les parcours essentiels à partir de l’API métier.
 
-- [ ] Confirmer Tauri et sa version, le framework ou JavaScript/TypeScript retenu, et les cibles de publication.
-- [ ] Créer les vues de recherche, filtres et résultats.
-- [ ] Créer la fiche détaillée et ses états de chargement, erreur et absence de résultat.
-- [ ] Relier l’interface au cœur par des commandes Tauri clairement typées.
-- [ ] Construire une mise en page responsive, avec navigation clavier et retours visibles.
-- [ ] Tester la distribution et l’accès aux données locales sur chaque plateforme prioritaire.
+- [x] Confirmer Tauri v2, TypeScript/Vite vanilla et Windows desktop comme première cible.
+- [x] Créer les vues de recherche, filtre par thème, tri et résultats pour le corpus complet.
+- [x] Créer la fiche détaillée avec tests, méthodologies et références normatives, ainsi que les états de chargement, erreur et absence de résultat.
+- [x] Relier l’interface au cœur par les commandes Tauri `list_topics`, `query_articles` et `get_criterion`.
+- [x] Construire une mise en page responsive, avec navigation clavier de base, annonces de recherche et fermeture du dialogue par Échap.
+- [x] Vérifier le build et le démarrage de l’application Windows x64 ; le cœur charge le corpus embarqué hors ligne.
 
-**Livrables :** parcours MVP utilisables, intégration cœur/UI et premiers paquets exécutables.  
-**Sortie du jalon :** un utilisateur peut rechercher et ouvrir un critère en ligne comme hors ligne.
+**Livrables en cours :** parcours MVP, intégration cœur/UI, aperçu navigateur et installateurs Windows x64 (MSI et NSIS) dans `apps/desktop/src-tauri/target/release/bundle`.
+**Validation :** `npm run build`, `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml` et `npm run tauri build` passent. Le lancement de l’exécutable Tauri est vérifié ; le cœur charge son corpus embarqué via `A11yCore::from_bundled`. Dans l’aperçu, 106 critères se chargent, la recherche « contraste » renvoie 3 résultats et la fiche s’ouvre. À 320 px, aucun débordement horizontal après correction ; au clavier, le dialogue reçoit le focus, Échap le ferme et le focus revient à la carte. Recette manuelle du commanditaire sur l’application desktop : clavier, recherches accentuées et par référence, filtres, fiches et tests ainsi que réduction maximale de la fenêtre validés. Le fonctionnement hors ligne n’a pas encore pu être testé ; la recette lecteur d’écran reste à faire.
 
 ### Jalon 5 — Accessibilité, recette et publication
 
 **Objectif :** détecter et corriger les obstacles d’accessibilité et fiabiliser la livraison.
 
+**Périmètre ajouté au MVP avec accord du commanditaire (4 novembre 2026) :** intégrer progressivement des préférences d’affichage utiles aux publics avec TND et aux démonstrations d’accessibilité : choix de police locale (candidats cités : OpenDyslexic, Lexend, Andika et Arial), thèmes clair/sombre/sépia, palettes pensées pour différentes formes de daltonisme et couleur d’accent réglable. Les préférences seront persistées localement. Avant d’intégrer les polices, inventorier le dossier fourni par le commanditaire et vérifier formats, licences et solutions de repli. Concevoir les palettes avec des repères autres que la couleur seule et maintenir des contrastes vérifiés ; ne pas assimiler l’option daltonisme à un filtre universel.
+
+**Inventaire initial des polices (4 novembre 2026) :** `assets/fonts/` contient 96 fichiers WOFF2 : Andika, Atkinson Hyperlegible (dont Next et Mono), Lexend, Luciole, OpenDyslexic (dont Alta et Mono), Ubuntu et des variantes de polices système (Arial, Calibri, Comic Sans MS, Trebuchet MS, Verdana). Les licences des familles libres ont été confirmées par le commanditaire pour cet usage. Les fontes système ne sont pas redistribuées ; le choix système utilise celles installées sur le poste.
+
 - [ ] Définir une matrice de tests clavier, lecteur d’écran, zoom, contraste et responsive.
-- [ ] Tester avec les technologies d’assistance pertinentes pour les plateformes effectivement prises en charge (par exemple NVDA, VoiceOver et TalkBack).
+- [x] Tester avec les technologies d’assistance pertinentes pour les plateformes effectivement prises en charge : NVDA et Narrateur Windows validés sur Windows ; VoiceOver et TalkBack ne sont pas concernés par la cible desktop actuelle.
 - [ ] Effectuer les tests automatisés disponibles, puis une revue manuelle : l’automatisation seule ne prouve pas la conformité.
+- [x] Vérifier le contraste des textes et contrôles principaux dans les trois thèmes et avec un accent personnalisé ; seuil mesuré supérieur ou égal à 4,5:1 dans les cas contrôlés.
 - [ ] Vérifier les parcours critiques et les annonces d’état, les titres, le focus et les messages d’erreur.
 - [ ] Traiter les anomalies bloquantes et documenter les limites connues.
+- [x] Inventorier les polices fournies et implémenter les préférences locales de thème, accent et typographie avec un garde-fou de contraste ; les fontes libres utilisées sont embarquées et persistées localement.
+- [ ] Valider les palettes de couleurs avec des personnes concernées, sans transmettre d’information par la couleur seule. La palette bleu et ambre actuelle est une alternative de repérage, pas une simulation universelle du daltonisme.
+- [x] Vérifier que les préférences restent appliquées après redémarrage de l’application desktop.
+- [x] N’embarquer que les fichiers de polices dont les droits d’utilisation ont été confirmés ; ne pas redistribuer les fontes système.
 - [ ] Générer les builds et documenter installation, mise à jour, sources de données et contribution.
 
 **Livrables :** rapport de recette, anomalies traitées ou suivies, documentation utilisateur et technique, builds ciblés.  
@@ -226,7 +235,7 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - Mettre à jour les cases à cocher uniquement après vérification du livrable correspondant.
 - À chaque fin de jalon, noter ici la date, le résultat, les écarts et les décisions prises.
 - Si le périmètre ou une hypothèse structurante change, mettre à jour les sections concernées et la version du document.
-- Prochaine action recommandée : engager le **jalon 4** pour créer le premier écran Tauri et fournir un aperçu visuel ; configurer les clés et le téléchargement des Releases avant d’activer les mises à jour distantes.
+- Prochaine action recommandée : terminer la recette du **jalon 5** (matrice d’accessibilité, contrôles automatisés et revue manuelle, validation des palettes et documentation des builds). Reprendre également le test hors ligne reporté au jalon 4. La configuration des clés et du téléchargement des Releases reste une étape séparée, à réaliser avant d’activer les mises à jour distantes.
 
 ### Journal des jalons
 
@@ -239,3 +248,14 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 | 4 novembre 2026 | Jalon 2 terminé | Workspace Cargo et crate `a11y-core` créés. API indépendante de Tauri, recherche accent-insensible, filtres et validation de corpus implémentés. 7 tests passent ; Clippy sans avertissement ; benchmark après indexation : ~63,5 µs/recherche en Release. |
 | 4 novembre 2026 | Jalon 3 — socle et pipeline local | Manifeste, paquet de test séquence 1, vérification SHA-256, installation versionnée atomique et signature Ed25519 implémentés ; 14 tests passent. Workflow GitHub Releases préparé pour `All-Inclusives/RGAA-BIBLE` ; clés et téléchargement réseau restent à configurer. |
 | 4 novembre 2026 | Publication initiale GitHub | Premier commit `5dd396e` poussé sur `main` avec le code, le corpus validé et le workflow. GitHub Actions confirme le workflow « Publish RGAA dataset » actif. Aucun secret ni clé privée n’a été publié ; aucune Release de données n’a été créée. |
+| 4 novembre 2026 | Reprise après crash — aperçu du jalon 4 | Après interruption, le serveur de développement a été relancé (`apps/desktop`, `npm run dev -- --host 127.0.0.1`) et l’aperçu navigateur est de nouveau accessible (HTTP 200). Vérification du corpus local : 13 thèmes, 106 critères et 258 tests ; la recherche « contraste » renvoie 3 critères et l’ouverture de la fiche 3.2 fonctionne. La recette d’accessibilité et la validation complète du jalon 4 restent à faire. |
+| 4 novembre 2026 | Jalon 4 — responsive et build Windows | La recette navigateur confirme la navigation clavier du dialogue et l’absence de débordement à 320 px ; la largeur minimale mobile a été corrigée dans `apps/desktop/src/styles.css`. `npm run tauri build` génère l’exécutable Windows x64 et les paquets MSI/NSIS ; le test de démarrage de l’exécutable reste actif après 8 secondes. Le cœur Tauri initialise le corpus intégré avec `A11yCore::from_bundled`, pour la consultation hors ligne. La recette lecteur d’écran et le test interactif complet du paquet restent à faire. |
+| 4 novembre 2026 | Recette manuelle desktop par le commanditaire | Parcours clavier et focus, recherche par texte et référence, filtres, consultation des fiches et fenêtres réduites au minimum validés. Le test hors ligne est reporté car des processus en cours ne peuvent pas être interrompus ; aucun changement n’est apporté à la connexion. La recette lecteur d’écran reste à faire. |
+| 4 novembre 2026 | Jalon 5 — première passe d’audit et préférences TND | Le contrôle navigateur des libellés, champs, dialogue, annonces et contrastes a conduit à assombrir les petits textes insuffisamment contrastés et le placeholder, ainsi qu’à supprimer une annonce de résultats redondante. `npm run build` passe ; le parcours recherche et dialogue reste fonctionnel. Avec l’accord du commanditaire, les préférences de police, thèmes clair/sombre/sépia, palettes daltonisme et couleur d’accent entrent au périmètre du MVP en plusieurs étapes. L’audit lecteur d’écran et le test hors ligne sont encore en attente. |
+| 4 novembre 2026 | Jalon 5 — inventaire des polices locales | Inventaire de `assets/fonts/` : 96 fichiers WOFF2 répartis entre Andika, Atkinson Hyperlegible/Next/Mono, Lexend, Luciole, OpenDyslexic/Alta/Mono, Ubuntu et des fontes système Microsoft. Le README donne des indications de licence, mais aucun fichier de licence distinct n’est présent ; les fontes système ne seront pas embarquées avant vérification des droits. |
+| 4 novembre 2026 | Jalon 5 — première version des préférences d’affichage | Thèmes clair, sombre et sépia, palette bleu/ambre, accent personnalisé et persistance locale implémentés. Le contrôle navigateur vérifie la réapplication après rechargement, la fermeture clavier avec restitution du focus et l’affichage à 320 px ; l’audit de contraste corrigé passe dans les trois thèmes (minimum mesuré : 4,51:1). La palette alternative est explicitement documentée comme non universelle et non simulatrice du daltonisme. |
+| 4 novembre 2026 | Jalon 5 — build desktop relancé | `npm run build` et `npm run tauri build` passent après intégration des préférences ; les installateurs Windows x64 MSI et NSIS ont été régénérés. L’exécutable desktop démarre et affiche sa fenêtre AccessiGuide ; la recette utilisateur des préférences après fermeture/réouverture, le lecteur d’écran et la validation de la palette restent à faire. |
+| 4 novembre 2026 | Jalon 5 — recette lecteurs d’écran Windows | Le commanditaire confirme que l’application fonctionne avec NVDA et le Narrateur Windows. Le test des technologies d’assistance sur la cible Windows desktop est validé. |
+| 4 novembre 2026 | Jalon 5 — préférences et contraste du mode sombre | Après redémarrage de la fenêtre desktop, le commanditaire confirme que les préférences d’apparence sont conservées et valide la palette sépia. Les libellés « Test x.x.x », « Méthodologie » et la version RGAA de l’en-tête en mode sombre utilisent désormais la couleur d’accentuation ajustée pour le contraste. |
+| 4 novembre 2026 | Jalon 5 — intégration des typographies | Le commanditaire confirme les droits d’utilisation des fontes libres du dossier. Andika, Atkinson Hyperlegible, Lexend, Luciole, OpenDyslexic et Ubuntu sont intégrées à l’application desktop en variantes régulière et grasse ; le choix de typographie est persisté localement et les fontes système ne sont pas redistribuées. `npm run build` passe ; le chargement effectif des six familles et l’application des sept choix (dont la police système) sont vérifiés dans l’aperçu navigateur. |
+| 4 novembre 2026 | Licence du code AccessiGuide | Le commanditaire choisit MIT pour le code AccessiGuide, avec attribution à ALL-Inclusive / Bruno ECARD. Le corpus RGAA et les polices tierces conservent leurs licences propres, documentées dans `THIRD_PARTY_NOTICES.md`. |

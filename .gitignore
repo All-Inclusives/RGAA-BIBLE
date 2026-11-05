@@ -1,3 +1,7 @@
 /target/
 /releases/
 /accessibilite.numerique.gouv.fr/
+/apps/desktop/node_modules/
+/apps/desktop/dist/
+/apps/desktop/src-tauri/target/
+/assets/fonts/Système/

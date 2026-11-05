@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Explorez les critères RGAA 4.1.2, leurs tests et leurs références officielles."
+    />
+    <meta name="theme-color" content="#f6f7fb" />
+    <title>AccessiGuide — La boussole de l’accessibilité numérique</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <a
+            class="brand-mark"
+            href="https://www.all-inclusive.ovh/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="ALL-Inclusive — ouvrir le site dans un nouvel onglet"
+          >
+            <img id="brand-logo" alt="" />
+          </a>
+          <a class="brand-name" href="#accueil" aria-label="AccessiGuide, accueil">Accessi<span>Guide</span></a>
+        </div>
+        <nav class="topbar-nav" aria-label="Navigation principale">
+          <a class="nav-link nav-link-active" href="#explorer" aria-current="page">Explorer</a>
+          <a class="nav-link" href="#a-propos">À propos</a>
+          <button class="nav-link settings-button" id="open-settings" type="button" aria-haspopup="dialog" aria-controls="settings-dialog">Affichage</button>
+        </nav>
+        <span class="version-pill"><span class="status-dot" aria-hidden="true"></span> RGAA 4.1.2</span>
+      </header>
+
+      <main id="accueil">
+        <section class="hero" aria-labelledby="page-title">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span> L’ACCESSIBILITÉ, PLUS CLAIREMENT</p>
+            <h1 id="page-title">La bonne règle,<br /><span>au bon moment.</span></h1>
+            <p class="hero-description">
+              Explorez les critères RGAA, comprenez leurs exigences et trouvez les repères utiles pour vos projets.
+            </p>
+          </div>
+          <div class="hero-illustration" aria-hidden="true">
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="orbit-core"><span>A</span><i></i><i></i><i></i></div>
+            <span class="orbit-label orbit-label-top">CLARTÉ</span>
+            <span class="orbit-label orbit-label-bottom">INCLUSION</span>
+          </div>
+        </section>
+
+        <section class="explorer-section" id="explorer" aria-labelledby="explorer-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow section-eyebrow">VOTRE ESPACE DE REPÈRES</p>
+              <h2 id="explorer-title">Explorer le référentiel</h2>
+            </div>
+            <p class="offline-label"><span aria-hidden="true">●</span> Disponible hors ligne</p>
+          </div>
+
+          <form class="search-form" id="search-form" role="search">
+            <label class="sr-only" for="search-input">Rechercher un critère, un thème ou un mot-clé</label>
+            <span class="search-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.2 4.2"></path></svg>
+            </span>
+            <input id="search-input" name="q" type="search" autocomplete="off" placeholder="Ex. : contraste, navigation clavier, 1.1..." />
+            <kbd id="search-shortcut" aria-hidden="true">Ctrl K</kbd>
+            <button class="search-submit" type="submit">Rechercher</button>
+          </form>
+
+          <div class="browse-layout">
+            <aside class="filter-panel" aria-labelledby="filter-title">
+              <div class="filter-heading">
+                <h3 id="filter-title">Affiner</h3>
+                <button class="reset-button" id="reset-filters" type="button">Réinitialiser</button>
+              </div>
+              <fieldset class="filter-group">
+                <legend>Thème du référentiel</legend>
+                <label class="select-wrap">
+                  <span class="sr-only">Choisir un thème</span>
+                  <select id="topic-filter" name="topic">
+                    <option value="">Tous les thèmes</option>
+                  </select>
+                  <span class="select-chevron" aria-hidden="true">⌄</span>
+                </label>
+              </fieldset>
+              <fieldset class="filter-group">
+                <legend>Besoin ou handicap</legend>
+                <label class="select-wrap">
+                  <span class="sr-only">Filtrer par besoin ou handicap</span>
+                  <select disabled aria-describedby="editorial-coming">
+                    <option>Enrichissement à venir</option>
+                  </select>
+                  <span class="select-chevron" aria-hidden="true">⌄</span>
+                </label>
+                <p class="filter-note" id="editorial-coming">Les filtres pédagogiques seront ajoutés avec les fiches enrichies.</p>
+              </fieldset>
+              <div class="filter-note-box">
+                <span class="note-icon" aria-hidden="true">i</span>
+                <p>Les critères sont issus du référentiel officiel français <strong>RGAA 4.1.2</strong>.</p>
+              </div>
+            </aside>
+
+            <div class="results-column">
+              <div class="results-heading">
+                <div>
+                  <h3>Critères du référentiel</h3>
+                  <p id="result-count" class="result-count" aria-live="polite" aria-atomic="true">Chargement des critères…</p>
+                </div>
+                <label class="sort-control">
+                  <span>Trier par</span>
+                  <select id="sort-order" aria-label="Trier les critères">
+                    <option value="relevance">Pertinence</option>
+                    <option value="reference">Référence</option>
+                  </select>
+                </label>
+              </div>
+              <div id="results-list" class="results-list" aria-busy="true"></div>
+              <button class="load-more" id="load-more" type="button" hidden>Afficher plus de critères</button>
+              <div id="empty-state" class="empty-state" hidden>
+                <span class="empty-icon" aria-hidden="true">⌕</span>
+                <h4>Aucun critère trouvé</h4>
+                <p>Essayez un autre mot-clé ou réinitialisez les filtres.</p>
+                <button class="secondary-button" id="empty-reset" type="button">Voir tous les critères</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="source-note" id="a-propos" aria-label="À propos des données">
+          <span class="source-mark" aria-hidden="true">✓</span>
+          <p><strong>Une source, pas de raccourcis.</strong> Le contenu normatif est cité depuis le référentiel officiel. Les explications et exemples seront clairement identifiés comme contenus pédagogiques.</p>
+          <a href="https://accessibilite.numerique.gouv.fr/" target="_blank" rel="noreferrer">Consulter la source officielle <span aria-hidden="true">↗</span></a>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>ACCESSIGUIDE <span class="footer-separator" aria-hidden="true">·</span> UN OUTIL POUR DES SERVICES PLUS INCLUSIFS</span>
+        <span class="footer-credit">
+          <img id="author-avatar" alt="" />
+          <span>
+            Bruno ECARD <span class="footer-separator" aria-hidden="true">·</span> ALL-Inclusive
+            <a class="footer-email" href="mailto:bruno.ecard@gmail.com">bruno.ecard@gmail.com</a>
+          </span>
+        </span>
+        <span>Corpus RGAA 4.1.2 <span class="footer-separator" aria-hidden="true">·</span> Fonctionne hors ligne</span>
+      </footer>
+    </div>
+
+    <dialog class="criterion-dialog" id="criterion-dialog" aria-labelledby="dialog-title">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow" id="dialog-eyebrow">CRITÈRE RGAA</p>
+          <h2 id="dialog-title"></h2>
+        </div>
+        <button class="dialog-close" id="dialog-close" type="button" aria-label="Fermer le détail du critère">×</button>
+      </div>
+      <div class="dialog-content" id="dialog-content"></div>
+    </dialog>
+
+    <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">PERSONNALISATION</p>
+          <h2 id="settings-title">Préférences d’affichage</h2>
+        </div>
+        <button class="dialog-close" id="close-settings" type="button" aria-label="Fermer les préférences d’affichage">×</button>
+      </div>
+      <form class="dialog-content settings-content" id="settings-form">
+        <label class="preference-field" for="theme-choice">
+          <span>Ambiance</span>
+          <select id="theme-choice" name="theme">
+            <option value="light">Clair</option>
+            <option value="dark">Sombre</option>
+            <option value="sepia">Sépia</option>
+          </select>
+        </label>
+        <label class="preference-field" for="palette-choice">
+          <span>Palette de repères</span>
+          <select id="palette-choice" name="palette">
+            <option value="standard">Classique</option>
+            <option value="blue-amber">Bleu et ambre (palette alternative)</option>
+          </select>
+          <span class="preference-help">Cette palette n’est pas une simulation du daltonisme. Les libellés restent présents et aucune information ne repose sur la couleur seule.</span>
+        </label>
+        <label class="preference-field" for="accent-choice">
+          <span>Couleur d’accentuation</span>
+          <input id="accent-choice" name="accent" type="color" value="#4662dc" aria-describedby="accent-help" />
+          <span class="preference-help" id="accent-help">L’accent du texte est ajusté automatiquement pour rester lisible.</span>
+        </label>
+        <label class="preference-field" for="font-choice">
+          <span>Typographie</span>
+          <select id="font-choice" name="font">
+            <option value="system">Police système</option>
+            <option value="andika">Andika</option>
+            <option value="atkinson">Atkinson Hyperlegible</option>
+            <option value="lexend">Lexend</option>
+            <option value="luciole">Luciole</option>
+            <option value="opendyslexic">OpenDyslexic</option>
+            <option value="ubuntu">Ubuntu</option>
+          </select>
+          <span class="preference-help">Les polices intégrées restent disponibles hors ligne. Le choix s’applique à l’ensemble de l’interface.</span>
+        </label>
+        <p class="preference-status" id="preference-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      </form>
+    </dialog>
+
+    <div class="sr-only" id="announcement" role="status" aria-live="polite" aria-atomic="true"></div>
+  </body>
+</html>
