@@ -21,6 +21,7 @@ pub use updates::{
 };
 
 const BUNDLED_DATA: &str = include_str!("../../../data/rgaa-4.1.2.json");
+const SUPPORTED_DATASET_SCHEMA_VERSIONS: &[&str] = &["1.0.0", "1.1.0"];
 
 #[derive(Debug)]
 pub enum CoreError {
@@ -128,6 +129,56 @@ pub struct EditorialContent {
     pub fr: LocalizedEditorialContent,
     pub tags: EditorialTags,
     pub examples: Vec<CodeExample>,
+    #[serde(default, rename = "pedagogicalTests")]
+    pub pedagogical_tests: Vec<PedagogicalTestContent>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PedagogicalTestContent {
+    pub test_id: String,
+    pub status: PedagogicalContentStatus,
+    pub plain_language_draft: String,
+    pub user_benefit: String,
+    pub cases: Vec<PedagogicalCase>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum PedagogicalContentStatus {
+    Draft,
+    InReview,
+    Validated,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PedagogicalCase {
+    pub id: String,
+    pub title: String,
+    pub context: String,
+    pub explanation: String,
+    #[serde(default)]
+    pub visual_effect: Option<String>,
+    pub resources: Vec<PedagogicalResource>,
+    pub code: PedagogicalCode,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PedagogicalResource {
+    pub id: String,
+    pub file: String,
+    pub alt_text: Option<String>,
+    pub source: String,
+    pub license: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct PedagogicalCode {
+    pub language: String,
+    pub snippet: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -333,6 +384,12 @@ impl A11yCore {
 
 fn validate_dataset(dataset: &Dataset) -> Result<(), CoreError> {
     let invalid = |message: String| CoreError::InvalidDataset(message);
+    if !SUPPORTED_DATASET_SCHEMA_VERSIONS.contains(&dataset.schema_version.as_str()) {
+        return Err(invalid(format!(
+            "unsupported dataset schema version {}",
+            dataset.schema_version
+        )));
+    }
     if dataset.topics.is_empty() {
         return Err(invalid("no topics found".to_owned()));
     }
@@ -368,6 +425,73 @@ fn validate_dataset(dataset: &Dataset) -> Result<(), CoreError> {
             }
             if !criterion_ids.insert(criterion.id.clone()) {
                 return Err(invalid(format!("duplicate criterion id: {}", criterion.id)));
+            }
+            let mut pedagogy_ids = HashSet::new();
+            for pedagogy in &criterion.editorial.pedagogical_tests {
+                let test_number = pedagogy
+                    .test_id
+                    .strip_prefix(&format!("{}.", criterion.id))
+                    .unwrap_or("");
+                if !criterion.official.tests.contains_key(test_number)
+                    || !pedagogy_ids.insert(pedagogy.test_id.as_str())
+                {
+                    return Err(invalid(format!(
+                        "pedagogical content references an unknown or duplicate test: {}",
+                        pedagogy.test_id
+                    )));
+                }
+                if pedagogy.plain_language_draft.trim().is_empty()
+                    || pedagogy.user_benefit.trim().is_empty()
+                    || pedagogy.cases.is_empty()
+                {
+                    return Err(invalid(format!(
+                        "pedagogical content for {} must include an explanation, user benefit, and cases",
+                        pedagogy.test_id
+                    )));
+                }
+                let mut case_ids = HashSet::new();
+                for case in &pedagogy.cases {
+                    if case.id.trim().is_empty()
+                        || !case_ids.insert(case.id.as_str())
+                        || case.title.trim().is_empty()
+                        || case.context.trim().is_empty()
+                        || case.explanation.trim().is_empty()
+                        || case.resources.is_empty()
+                        || case.code.language.trim().is_empty()
+                        || case.code.snippet.trim().is_empty()
+                        || case
+                            .visual_effect
+                            .as_deref()
+                            .is_some_and(|effect| effect != "blur")
+                    {
+                        return Err(invalid(format!(
+                            "pedagogical case {} in {} is incomplete or invalid",
+                            case.id, pedagogy.test_id
+                        )));
+                    }
+                    let mut resource_ids = HashSet::new();
+                    if case.resources.iter().any(|resource| {
+                        resource.id.trim().is_empty()
+                            || !resource_ids.insert(resource.id.as_str())
+                            || resource.file.trim().is_empty()
+                            || !resource.file.chars().all(|character| {
+                                character.is_ascii_alphanumeric() || "._-".contains(character)
+                            })
+                            || !resource
+                                .file
+                                .chars()
+                                .next()
+                                .is_some_and(|character| character.is_ascii_alphanumeric())
+                            || resource.source.trim().is_empty()
+                            || resource.license.trim().is_empty()
+                            || !case.code.snippet.contains(&resource.file)
+                    }) {
+                        return Err(invalid(format!(
+                            "pedagogical resources in {} must have unique ids and complete provenance",
+                            pedagogy.test_id
+                        )));
+                    }
+                }
             }
             for test_number in criterion.official.tests.keys() {
                 let test_id = format!("{}.{}", criterion.id, test_number);
@@ -518,7 +642,7 @@ mod tests {
         assert_eq!(core.dataset().counts.glossary_entries, 119);
         assert_eq!(core.dataset().counts.methodologies, 258);
 
-        let version = core.check_data_version("1.0.0", "4.1.2");
+        let version = core.check_data_version("1.1.0", "4.1.2");
         assert!(version.schema_matches);
         assert!(version.rgaa_version_matches);
         assert_eq!(
@@ -664,5 +788,64 @@ mod tests {
             &[]
         );
         assert!(core.get_code_examples("99.99").is_none());
+    }
+
+    #[test]
+    fn loads_the_pedagogical_pilot_and_distinguishes_alternative_states() {
+        let core = A11yCore::from_bundled().expect("bundled corpus should be valid");
+        let criterion = core.get_criterion("1.1").expect("criterion 1.1");
+        let pilot = criterion
+            .editorial
+            .pedagogical_tests
+            .iter()
+            .find(|test| test.test_id == "1.1.1")
+            .expect("pedagogical pilot for test 1.1.1");
+
+        assert_eq!(pilot.cases.len(), 4);
+        assert_eq!(pilot.cases[0].resources[0].alt_text.as_deref(), Some(""));
+        assert_eq!(pilot.cases[1].resources[0].alt_text, None);
+        assert_eq!(
+            pilot.cases[2].resources[0].alt_text.as_deref(),
+            Some("image")
+        );
+        assert!(
+            pilot.cases[3].resources[0]
+                .alt_text
+                .as_deref()
+                .is_some_and(|alternative| alternative.contains("tasse verte"))
+        );
+    }
+
+    #[test]
+    fn loads_legacy_dataset_without_pedagogical_fields() {
+        let mut legacy: Value =
+            serde_json::from_str(BUNDLED_DATA).expect("bundled JSON should parse");
+        legacy["schemaVersion"] = Value::String("1.0.0".to_owned());
+        for topic in legacy["topics"]
+            .as_array_mut()
+            .expect("topics should be an array")
+        {
+            for criterion in topic["criteria"]
+                .as_array_mut()
+                .expect("criteria should be an array")
+            {
+                criterion["editorial"]
+                    .as_object_mut()
+                    .expect("editorial should be an object")
+                    .remove("pedagogicalTests");
+            }
+        }
+
+        let core = A11yCore::from_json_str(
+            &serde_json::to_string(&legacy).expect("legacy dataset should serialize"),
+        )
+        .expect("legacy corpus should remain compatible");
+        assert_eq!(
+            core.get_criterion("1.1")
+                .expect("criterion 1.1")
+                .editorial
+                .pedagogical_tests,
+            []
+        );
     }
 }

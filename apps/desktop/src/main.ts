@@ -26,7 +26,34 @@ type Criterion = {
 		fr: { explanation: string | null; userImpact: string | null };
 		tags: { components: string[]; disabilitySituations: string[] };
 		examples: { language: string; bad: string; good: string }[];
+		pedagogicalTests: PedagogicalTest[];
 	};
+};
+
+type PedagogicalTest = {
+	testId: string;
+	status: "draft" | "inReview" | "validated";
+	plainLanguageDraft: string;
+	userBenefit: string;
+	cases: PedagogicalCase[];
+};
+
+type PedagogicalCase = {
+	id: string;
+	title: string;
+	context: string;
+	explanation: string;
+	visualEffect?: "blur";
+	resources: PedagogicalResource[];
+	code: { language: string; snippet: string };
+};
+
+type PedagogicalResource = {
+	id: string;
+	file: string;
+	altText: string | null;
+	source: string;
+	license: string;
 };
 
 type SearchResult = {
@@ -272,6 +299,116 @@ function addDetailSection(container: HTMLElement, heading: string, content: stri
 	container.append(section);
 }
 
+function renderPedagogicalTest(criterion: Criterion, pedagogy: PedagogicalTest): HTMLElement {
+	const section = element("section", "detail-section pedagogy-section");
+	const statusLabel = {
+		draft: "Brouillon à relire",
+		inReview: "En relecture",
+		validated: "Contenu pédagogique relu",
+	}[pedagogy.status];
+	section.append(
+		element("h3", undefined, `Contenu pédagogique — test ${pedagogy.testId}`),
+		element("p", "pedagogy-status", statusLabel),
+	);
+
+	const testNumber = pedagogy.testId.slice(criterion.id.length + 1);
+	const officialTest = criterion.official.tests[testNumber];
+	if (officialTest) {
+		const official = element("p", "pedagogy-official-test");
+		official.append(
+			element("strong", undefined, "Texte officiel du test : "),
+			document.createTextNode(
+				(Array.isArray(officialTest) ? officialTest : [officialTest])
+					.map(plainText)
+					.join(" "),
+			),
+		);
+		section.append(official);
+	}
+
+	const plainLanguage = element("p", "pedagogy-summary");
+	plainLanguage.append(
+		element("strong", undefined, "Explication en langage clair — brouillon, non validé FALC : "),
+		document.createTextNode(pedagogy.plainLanguageDraft),
+	);
+	const benefit = element("p", "pedagogy-benefit");
+	benefit.append(
+		element("strong", undefined, "Bénéfice pour les personnes concernées : "),
+		document.createTextNode(pedagogy.userBenefit),
+	);
+	section.append(plainLanguage, benefit);
+
+	const cases = element("div", "pedagogy-cases");
+	for (const [index, example] of pedagogy.cases.entries()) {
+		const card = element("article", "pedagogy-case");
+		card.append(element("h4", undefined, `${index + 1}. ${example.title}`));
+
+		card.append(element("p", "pedagogy-context", example.context));
+		const resources = element("div", "pedagogy-resources");
+		for (const resource of example.resources) {
+			const resourceCard = element("div", "pedagogy-resource");
+			const figure = element("figure", "pedagogy-figure");
+			const image = element("img", "pedagogy-image");
+			image.src = `/pedagogy/${encodeURIComponent(resource.file)}`;
+			image.alt = "";
+			if (example.visualEffect === "blur") image.classList.add("pedagogy-image-blurred");
+			figure.append(image);
+			if (example.id === "missing-alternative") {
+				figure.append(
+					element("figcaption", undefined, "Pouvez-vous dire ce que montre cette image ?"),
+				);
+			} else {
+				figure.append(
+					element(
+						"figcaption",
+						undefined,
+						"Aperçu décoratif ; le comportement démontré est dans l’extrait HTML.",
+					),
+				);
+			}
+			image.addEventListener("error", () => {
+				image.hidden = true;
+				figure.append(
+					element("figcaption", undefined, `Ressource non intégrée à l’application : ${resource.file}`),
+				);
+			});
+			resourceCard.append(figure);
+
+			const alternative = element("p", "pedagogy-resource-detail");
+			alternative.append(
+				element("strong", undefined, `Alternative pour ${resource.id} (${resource.file}) : `),
+				element(
+					"code",
+					undefined,
+					resource.altText === null
+						? "attribut alt absent"
+						: `alt="${resource.altText}"`,
+				),
+			);
+			const provenance = element("p", "pedagogy-resource-detail");
+			provenance.append(
+				element("strong", undefined, "Source : "),
+				document.createTextNode(resource.source),
+				document.createTextNode(" "),
+				element("strong", undefined, "Licence : "),
+				document.createTextNode(resource.license),
+			);
+			resourceCard.append(alternative, provenance);
+			resources.append(resourceCard);
+		}
+		card.append(resources);
+		card.append(element("p", "pedagogy-case-explanation", example.explanation));
+
+		const codeLabel = element("p", "pedagogy-code-label", `Exemple ${example.code.language.toUpperCase()}`);
+		const codeBlock = element("pre", "pedagogy-code");
+		codeBlock.append(element("code", undefined, example.code.snippet));
+		card.append(codeLabel, codeBlock);
+		cases.append(card);
+	}
+	section.append(cases);
+	return section;
+}
+
 async function openCriterion(reference: string): Promise<void> {
 	try {
 		const result = runtimeIsTauri
@@ -291,12 +428,15 @@ async function openCriterion(reference: string): Promise<void> {
 		elements.dialogContent.append(title);
 		if (criterion.editorial.fr.explanation) {
 			addDetailSection(elements.dialogContent, "En clair", criterion.editorial.fr.explanation);
-		} else {
+		} else if (criterion.editorial.pedagogicalTests.length === 0) {
 			addDetailSection(
 				elements.dialogContent,
 				"Contenu pédagogique à venir",
 				"L’explication en langage clair et l’impact pour les personnes concernées seront ajoutés séparément du texte officiel.",
 			);
+		}
+		for (const pedagogy of criterion.editorial.pedagogicalTests) {
+			elements.dialogContent.append(renderPedagogicalTest(criterion, pedagogy));
 		}
 
 		const testsSection = element("section", "detail-section");

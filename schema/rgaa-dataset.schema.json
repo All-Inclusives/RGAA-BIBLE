@@ -3,11 +3,65 @@
   "$id": "rgaa-dataset.schema.json",
   "title": "AccessiGuide RGAA dataset",
   "type": "object",
+  "$defs": {
+    "pedagogicalTest": {
+      "type": "object",
+      "required": ["testId", "status", "plainLanguageDraft", "userBenefit", "cases"],
+      "properties": {
+        "testId": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "status": { "type": "string", "enum": ["draft", "inReview", "validated"] },
+        "plainLanguageDraft": { "type": "string", "minLength": 1 },
+        "userBenefit": { "type": "string", "minLength": 1 },
+        "cases": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["id", "title", "context", "explanation", "resources", "code"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "title": { "type": "string", "minLength": 1 },
+              "context": { "type": "string", "minLength": 1 },
+              "explanation": { "type": "string", "minLength": 1 },
+              "visualEffect": { "type": "string", "enum": ["blur"] },
+              "resources": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["id", "file", "altText", "source", "license"],
+                  "properties": {
+                    "id": { "type": "string", "minLength": 1 },
+                    "file": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$" },
+                    "altText": { "type": ["string", "null"] },
+                    "source": { "type": "string", "minLength": 1 },
+                    "license": { "type": "string", "minLength": 1 }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "code": {
+                "type": "object",
+                "required": ["language", "snippet"],
+                "properties": {
+                  "language": { "type": "string", "minLength": 1 },
+                  "snippet": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
   "required": ["schemaVersion", "source", "wcagVersion", "topics", "glossary", "methodologies", "counts"],
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "const": "1.0.0"
+      "const": "1.1.0"
     },
     "source": {
       "type": "object",
@@ -78,7 +132,7 @@
                 },
                 "editorial": {
                   "type": "object",
-                  "required": ["fr", "tags", "examples"],
+                  "required": ["fr", "tags", "examples", "pedagogicalTests"],
                   "properties": {
                     "fr": {
                       "type": "object",
@@ -110,6 +164,10 @@
                         },
                         "additionalProperties": false
                       }
+                    },
+                    "pedagogicalTests": {
+                      "type": "array",
+                      "items": { "$ref": "#/$defs/pedagogicalTest" }
                     }
                   },
                   "additionalProperties": false

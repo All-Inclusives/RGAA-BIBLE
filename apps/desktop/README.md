@@ -27,16 +27,18 @@ Pour installer le build local, ouvrez le fichier MSI dans `src-tauri/target/rele
 
 Le corpus RGAA 4.1.2 est embarqué dans l’application. La recherche et les fiches restent disponibles sans connexion. Dans l’application Windows, **Vérifier les mises à jour** recherche la dernière Release `rgaa-data-<séquence>` du dépôt GitHub, vérifie la signature Ed25519 du manifeste puis l’intégrité et la provenance du corpus avant installation. Une mise à jour valide est activée immédiatement ; le corpus embarqué reste disponible si aucune mise à jour locale n’existe.
 
-La vérification distante nécessite la configuration de la clé de production. La clé publique Ed25519 (32 octets en 64 caractères hexadécimaux) est injectée à la compilation dans `A11Y_UPDATE_PUBLIC_KEY`, par exemple dans PowerShell avant le build :
+Le commanditaire a validé le fonctionnement des mises à jour distantes sur l’application Windows le 5 novembre 2026. Pour configurer une nouvelle build ou renouveler la clé, la clé publique Ed25519 (32 octets en 64 caractères hexadécimaux) est injectée à la compilation dans `A11Y_UPDATE_PUBLIC_KEY`, par exemple dans PowerShell avant le build :
 
 ```powershell
 $env:A11Y_UPDATE_PUBLIC_KEY = "<64 caractères hexadécimaux de la clé publique>"
 npm run tauri build
 ```
 
-La clé privée PEM correspondante doit être ajoutée uniquement comme secret GitHub Actions `A11Y_UPDATE_PRIVATE_KEY` pour publier une Release avec le workflow existant. Ne placez jamais la clé privée dans le dépôt ni dans les paramètres de build. Tant qu’une clé correspondante et une Release signée ne sont pas disponibles, l’application signale cette configuration manquante et continue d’utiliser le corpus embarqué ; aucun téléchargement non signé n’est accepté.
+La clé privée PEM correspondante doit être conservée uniquement comme secret GitHub Actions `A11Y_UPDATE_PRIVATE_KEY` pour publier une Release avec le workflow existant. Ne placez jamais la clé privée dans le dépôt ni dans les paramètres de build. L’application n’accepte aucun téléchargement non signé. Les mises à jour ultérieures et leur contenu devront continuer à être testés au fil des publications, notamment lors de l’enrichissement pédagogique des critères.
 
 La provenance des données et les licences du corpus et des polices tierces sont décrites dans [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). Pour régénérer le corpus depuis le dépôt source officiel déjà cloné à la racine du projet, exécutez `node tools/import-rgaa.js`.
+
+Les contenus pédagogiques sont préparés séparément du texte officiel dans [`data/pedagogy-fr.json`](../../data/pedagogy-fr.json), puis fusionnés au corpus par le même import. Ils sont liés aux tests par leur identifiant RGAA complet. Le pilote du test 1.1.1 présente quatre cas, avec code et une ou plusieurs ressources ; l’alternative, la provenance et la licence sont associées individuellement à chaque ressource. Son explication est un brouillon en langage clair, pas un contenu FALC validé. Les illustrations référencées sont fournies sous [`data/pedagogy/`](../../data/pedagogy/) et incluses par la configuration Vite ; chaque fichier référencé doit exister et avoir un nom sûr.
 
 ## Vérifications et contribution
 

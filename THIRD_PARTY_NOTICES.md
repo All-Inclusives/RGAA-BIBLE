@@ -12,6 +12,13 @@ identified as **Licence Ouverte 2.0 (Etalab), subject to third-party rights**.
 The source revision and file checksums are recorded in the dataset metadata.
 See <https://www.etalab.gouv.fr/licence-ouverte-open-licence/>.
 
+## Original pedagogical illustrations
+
+Original illustrations created for AccessiGuide in
+`data/pedagogy/` are project assets released under the MIT
+license. Each resource's provenance and license are also recorded alongside
+its pedagogical example in the dataset.
+
 ## Bundled fonts
 
 The WOFF2 fonts bundled with the desktop application retain their respective

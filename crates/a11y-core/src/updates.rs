@@ -346,11 +346,6 @@ fn validate_package(
     let package = std::str::from_utf8(package_bytes)
         .map_err(|error| UpdateError::InvalidPackage(error.to_string()))?;
     let core = A11yCore::from_json_str(package).map_err(UpdateError::Dataset)?;
-    if core.dataset().schema_version != manifest.schema_version {
-        return Err(UpdateError::InvalidManifest(
-            "package schema version does not match manifest".to_owned(),
-        ));
-    }
     if core.dataset().source.rgaa_version != manifest.rgaa_version
         || core.dataset().source.commit != manifest.source_commit
     {

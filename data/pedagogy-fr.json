@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "1.0.0",
+  "entries": [
+    {
+      "criterionId": "1.1",
+      "tests": [
+        {
+          "testId": "1.1.1",
+          "status": "draft",
+          "plainLanguageDraft": "Une image qui apporte une information doit avoir un texte de remplacement. Ce texte doit transmettre l’information utile de l’image dans son contexte. Une image décorative, qui n’apporte aucune information, peut avoir un texte de remplacement vide.",
+          "userBenefit": "Une personne qui ne voit pas l’image, par exemple parce qu’elle utilise un lecteur d’écran, peut ainsi accéder à l’information utile. Une image décorative n’interrompt pas inutilement sa lecture.",
+          "cases": [
+            {
+              "id": "decorative",
+              "title": "Image décorative",
+              "context": "Le texte visible à côté indique déjà : « Pause lecture avec un livre et une tasse de thé. »",
+              "explanation": "Dans ce contexte, le texte à côté indique déjà « Pause lecture avec un livre et une tasse de thé ». L’image n’ajoute aucune information : son alternative est vide.",
+              "resources": [
+                {
+                  "id": "image-tasse-livre",
+                  "file": "illustration-tasse-livre.svg",
+                  "altText": "",
+                  "source": "Illustration originale créée pour AccessiGuide.",
+                  "license": "MIT (illustration du projet)"
+                }
+              ],
+              "code": {
+                "language": "html",
+                "snippet": "<img src=\"illustration-tasse-livre.svg\" alt=\"\">"
+              }
+            },
+            {
+              "id": "missing-alternative",
+              "title": "Image informative sans alternative",
+              "context": "La page présente cette tasse et ce livre comme les objets à identifier.",
+              "explanation": "L’image apporte une information, mais l’élément HTML n’a pas d’attribut alt. Le flou est une mise en scène pédagogique ; le problème à repérer est l’absence d’alternative.",
+              "visualEffect": "blur",
+              "resources": [
+                {
+                  "id": "image-tasse-livre",
+                  "file": "illustration-tasse-livre.svg",
+                  "altText": null,
+                  "source": "Illustration originale créée pour AccessiGuide.",
+                  "license": "MIT (illustration du projet)"
+                }
+              ],
+              "code": {
+                "language": "html",
+                "snippet": "<img src=\"illustration-tasse-livre.svg\">"
+              }
+            },
+            {
+              "id": "misleading-alternative",
+              "title": "Alternative présente mais insuffisante",
+              "context": "La page donne l’image comme information principale ; l’alternative devrait en transmettre le contenu utile.",
+              "explanation": "L’attribut alt est présent, mais le mot « image » ne transmet pas l’information utile. Le balisage existe ; c’est le texte choisi qui ne convient pas à l’image et à son contexte.",
+              "resources": [
+                {
+                  "id": "image-tasse-livre",
+                  "file": "illustration-tasse-livre.svg",
+                  "altText": "image",
+                  "source": "Illustration originale créée pour AccessiGuide.",
+                  "license": "MIT (illustration du projet)"
+                }
+              ],
+              "code": {
+                "language": "html",
+                "snippet": "<img src=\"illustration-tasse-livre.svg\" alt=\"image\">"
+              }
+            },
+            {
+              "id": "meaningful-alternative",
+              "title": "Alternative pertinente",
+              "context": "La page présente cette illustration pour faire comprendre quels objets sont représentés.",
+              "explanation": "L’alternative décrit les éléments utiles de l’image, sans ajouter de détails qui ne sont pas visibles ou pertinents dans ce contexte.",
+              "resources": [
+                {
+                  "id": "image-tasse-livre",
+                  "file": "illustration-tasse-livre.svg",
+                  "altText": "Une tasse verte à côté d’un livre rouge, posés sur une table claire.",
+                  "source": "Illustration originale créée pour AccessiGuide.",
+                  "license": "MIT (illustration du projet)"
+                }
+              ],
+              "code": {
+                "language": "html",
+                "snippet": "<img src=\"illustration-tasse-livre.svg\" alt=\"Une tasse verte à côté d’un livre rouge, posés sur une table claire.\">"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

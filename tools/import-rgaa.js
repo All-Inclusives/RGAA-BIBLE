@@ -9,7 +9,7 @@ const { execFileSync } = require("node:child_process");
 const ROOT = path.resolve(__dirname, "..");
 const SOURCE_REPOSITORY = "https://github.com/DISIC/accessibilite.numerique.gouv.fr";
 const RGAA_VERSION = "4.1.2";
-const SCHEMA_VERSION = "1.0.0";
+const SCHEMA_VERSION = "1.1.0";
 const SOURCE_FILES = [
 	"RGAA/criteres.json",
 	"RGAA/glossaire.json",
@@ -174,9 +174,74 @@ function validateDataset(dataset) {
 					criterion.editorial.fr &&
 					Array.isArray(criterion.editorial.tags.components) &&
 					Array.isArray(criterion.editorial.tags.disabilitySituations) &&
-					Array.isArray(criterion.editorial.examples),
+					Array.isArray(criterion.editorial.examples) &&
+					Array.isArray(criterion.editorial.pedagogicalTests),
 				`champs éditoriaux invalides : ${criterion.id}`,
 			);
+			const pedagogyIds = new Set();
+			for (const pedagogy of criterion.editorial.pedagogicalTests) {
+				assert(
+					pedagogy &&
+						typeof pedagogy.testId === "string" &&
+						pedagogy.testId.startsWith(`${criterion.id}.`) &&
+						Object.hasOwn(criterion.official.tests, pedagogy.testId.slice(criterion.id.length + 1)) &&
+						["draft", "inReview", "validated"].includes(pedagogy.status) &&
+						typeof pedagogy.plainLanguageDraft === "string" &&
+						pedagogy.plainLanguageDraft.trim() &&
+						typeof pedagogy.userBenefit === "string" &&
+						pedagogy.userBenefit.trim() &&
+						Array.isArray(pedagogy.cases) &&
+						pedagogy.cases.length > 0,
+					`contenu pédagogique invalide : ${pedagogy?.testId ?? criterion.id}`,
+				);
+				assert(!pedagogyIds.has(pedagogy.testId), `test pédagogique dupliqué : ${pedagogy.testId}`);
+				pedagogyIds.add(pedagogy.testId);
+				const caseIds = new Set();
+				for (const example of pedagogy.cases) {
+					assert(
+						example &&
+							typeof example.id === "string" &&
+							example.id.trim() &&
+							!caseIds.has(example.id) &&
+							typeof example.title === "string" &&
+							example.title.trim() &&
+							typeof example.context === "string" &&
+							example.context.trim() &&
+							typeof example.explanation === "string" &&
+							example.explanation.trim() &&
+							(example.visualEffect === undefined || example.visualEffect === "blur") &&
+							Array.isArray(example.resources) &&
+							example.resources.length > 0 &&
+							example.code &&
+							typeof example.code.language === "string" &&
+							example.code.language.trim() &&
+							typeof example.code.snippet === "string" &&
+							example.code.snippet.trim(),
+						`cas pédagogique invalide : ${pedagogy.testId}/${example?.id ?? "sans identifiant"}`,
+					);
+					const resourceIds = new Set();
+					for (const resource of example.resources) {
+						assert(
+							resource &&
+								typeof resource.id === "string" &&
+								resource.id.trim() &&
+								!resourceIds.has(resource.id) &&
+								typeof resource.file === "string" &&
+								/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(resource.file) &&
+								(resource.altText === null || typeof resource.altText === "string") &&
+								typeof resource.source === "string" &&
+								resource.source.trim() &&
+								typeof resource.license === "string" &&
+								resource.license.trim() &&
+								example.code.snippet.includes(resource.file) &&
+								fs.existsSync(path.join(ROOT, "data", "pedagogy", resource.file)),
+							`ressource pédagogique invalide : ${pedagogy.testId}/${example.id}`,
+						);
+						resourceIds.add(resource.id);
+					}
+					caseIds.add(example.id);
+				}
+			}
 			for (const testNumber of Object.keys(criterion.official.tests)) {
 				testIds.add(`${criterion.id}.${testNumber}`);
 			}
@@ -215,6 +280,7 @@ function buildDataset(sourceRoot) {
 	const criteriaData = readSource(SOURCE_FILES[0]);
 	const glossaryData = readSource(SOURCE_FILES[1]);
 	const methodologyData = readSource(SOURCE_FILES[2]);
+	const pedagogyData = readJson(path.join(ROOT, "data", "pedagogy-fr.json"));
 	const counts = validateSource(criteriaData, glossaryData, methodologyData);
 	const readmePath = path.join(sourceRoot, "README.md");
 	assert(fs.existsSync(readmePath), "README.md source introuvable");
@@ -226,6 +292,42 @@ function buildDataset(sourceRoot) {
 	const commit = getSourceCommit(sourceRoot);
 	assert(/^[a-f0-9]{40}$/i.test(commit), "révision Git source invalide");
 
+	assert(
+		pedagogyData &&
+			pedagogyData.schemaVersion === "1.0.0" &&
+			Array.isArray(pedagogyData.entries),
+		"la grille pédagogique doit utiliser le schéma 1.0.0 et contenir entries",
+	);
+	const sourceTests = new Map();
+	for (const topic of criteriaData.topics) {
+		for (const { criterium } of topic.criteria) {
+			const criterionId = `${topic.number}.${criterium.number}`;
+			for (const testNumber of Object.keys(criterium.tests)) {
+				sourceTests.set(`${criterionId}.${testNumber}`, criterionId);
+			}
+		}
+	}
+	const pedagogyByCriterion = new Map();
+	for (const entry of pedagogyData.entries) {
+		assert(
+			entry &&
+				typeof entry.criterionId === "string" &&
+				Array.isArray(entry.tests),
+			"chaque entrée de la grille pédagogique doit avoir criterionId et tests",
+		);
+		const criterionPedagogy = pedagogyByCriterion.get(entry.criterionId) ?? [];
+		for (const test of entry.tests) {
+			assert(
+				test &&
+					typeof test.testId === "string" &&
+					sourceTests.get(test.testId) === entry.criterionId,
+				`test pédagogique inconnu ou rattaché au mauvais critère : ${test?.testId ?? entry.criterionId}`,
+			);
+			criterionPedagogy.push(test);
+		}
+		pedagogyByCriterion.set(entry.criterionId, criterionPedagogy);
+	}
+
 	const topics = criteriaData.topics.map((topic) => ({
 		id: String(topic.number),
 		title: topic.topic,
@@ -236,6 +338,8 @@ function buildDataset(sourceRoot) {
 				fr: { explanation: null, userImpact: null },
 				tags: { components: [], disabilitySituations: [] },
 				examples: [],
+				pedagogicalTests:
+					pedagogyByCriterion.get(`${topic.number}.${criterium.number}`) ?? [],
 			},
 		})),
 	}));

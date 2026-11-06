@@ -7,7 +7,8 @@ const path = require("node:path");
 
 const ROOT = path.resolve(__dirname, "..");
 const DATASET_PATH = path.join(ROOT, "data", "rgaa-4.1.2.json");
-const SCHEMA_VERSION = "1.0.0";
+const UPDATE_MANIFEST_SCHEMA_VERSION = "1.0.0";
+const SUPPORTED_DATASET_SCHEMA_VERSIONS = new Set(["1.0.0", "1.1.0"]);
 
 function signingPayload(manifest) {
 	return [
@@ -25,7 +26,7 @@ function signingPayload(manifest) {
 
 function createManifest(dataset, packageBytes, sequence, privateKeyPem) {
 	const manifest = {
-		schemaVersion: SCHEMA_VERSION,
+		schemaVersion: UPDATE_MANIFEST_SCHEMA_VERSION,
 		sequence,
 		rgaaVersion: dataset.source.rgaaVersion,
 		sourceCommit: dataset.source.commit,
@@ -65,7 +66,7 @@ function main() {
 		const packageBytes = fs.readFileSync(DATASET_PATH);
 		const dataset = JSON.parse(packageBytes.toString("utf8"));
 		if (
-			dataset.schemaVersion !== SCHEMA_VERSION ||
+			!SUPPORTED_DATASET_SCHEMA_VERSIONS.has(dataset.schemaVersion) ||
 			dataset.source.rgaaVersion !== "4.1.2" ||
 			!/^[a-f0-9]{40}$/i.test(dataset.source.commit)
 		) {

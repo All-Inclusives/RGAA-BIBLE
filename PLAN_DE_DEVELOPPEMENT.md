@@ -2,8 +2,8 @@
 
 > Document de pilotage vivant : il fixe les étapes et les critères de validation du projet. Il sera mis à jour à chaque jalon, décision importante ou changement de périmètre.
 
-**Version :** 1.7 — **Date :** 5 novembre 2026
-**Statut général :** interface, consultation hors ligne et recette manuelle du jalon 4 validées ; recette du jalon 5 avancée avec profils de repérage en cours de validation ; téléchargement des mises à jour signées intégré, en attente de configuration des clés et d’une Release signée.
+**Version :** 1.9 — **Date :** 6 novembre 2026
+**Statut général :** jalons 0 à 4 validés ; parcours de mise à jour distante signée testé avec succès ; recette d’accessibilité avancée. Le modèle structuré de contenu pédagogique est ajouté et un premier pilote est en cours pour le test 1.1.1 ; ses textes restent des brouillons à relire.
 **Cahier des charges :** `Cahier des charges RGAA BIBLE .txt`
 
 ## 1. Vision et objectif
@@ -48,6 +48,13 @@ Le produit doit fonctionner hors ligne. Son moteur métier et ses données seron
 - **Stockage MVP :** JSON versionné embarqué, retenu provisoirement vu le volume importé (~543 Ko) et le besoin d’un corpus local simple. Réévaluer si la recherche, la taille du corpus ou le cycle de mise à jour le justifie.
 - **Reproduction :** depuis la racine du projet, exécuter `node tools/import-rgaa.js`. Un chemin de dépôt source différent peut être passé en premier argument. Le script valide les données sources, l’unicité des critères et tests, la couverture exacte des méthodologies et la structure importée avant d’écrire le JSON de sortie.
 
+### Structure des contenus pédagogiques — pilote
+
+- **Grille de travail :** `data/pedagogy-fr.json`, rattachée aux tests normatifs par leur identifiant complet (par exemple `1.1.1`). L’import officiel reste reproductible ; la grille éditoriale est fusionnée séparément dans le corpus généré.
+- **Champs :** état de relecture, explication en langage clair (brouillon distinct du texte officiel), bénéfice usager et cas illustrés. Chaque cas peut référencer plusieurs ressources, chacune avec identifiant, nom de fichier, texte alternatif (`null` = attribut absent, chaîne vide = alternative vide), provenance et licence ; le code du cas est conservé séparément.
+- **Affichage :** la fiche montre les cas sous forme de cartes pédagogiques, et non le tableau éditorial de préparation. Le test `1.1.1` sert de pilote avec une image décorative, une alternative absente, une alternative présente mais insuffisante et une alternative pertinente. L’illustration floutée est un effet de présentation ; le défaut normatif démontré est l’absence d’alternative.
+- **Validation :** les textes du pilote sont des brouillons, pas du FALC validé. Le corpus valide que chaque entrée référence un test existant et que les champs et ressources sont renseignés. Les illustrations sont servies depuis `data/pedagogy/` par le répertoire public de Vite ; leur nom de fichier doit être sûr et chaque fichier référencé doit être inclus dans le build.
+
 ### Cœur métier validé au jalon 2
 
 - **Crate Rust :** `crates/a11y-core`, membre du workspace Cargo à la racine.
@@ -60,12 +67,13 @@ Le produit doit fonctionner hors ligne. Son moteur métier et ses données seron
 ### Mises à jour locales validées au jalon 3
 
 - **Manifeste :** `schema/rgaa-update-manifest.schema.json`, version de schéma `1.0.0`, numéro de séquence monotone, version RGAA, révision source, nom de paquet, empreinte SHA-256 et taille en octets.
+- **Compatibilité des versions :** le numéro du manifeste de mise à jour (`1.0.0`) est indépendant de la version du corpus (`1.1.0`). Le cœur accepte les corpus `1.0.0` et `1.1.0` ; les champs pédagogiques sont optionnels à la lecture des anciens corpus.
 - **Paquet de publication :** généré par `node tools/package-rgaa.js <sequence>` sous `releases/rgaa-4.1.2/<sequence>/`. La sortie est construite dans un dossier temporaire puis renommée ; le script refuse d’écraser une séquence existante.
 - **Validation et activation :** `install_update` vérifie le manifeste, la taille et l’empreinte, la provenance, la structure du corpus et les compteurs ; il écrit en staging sur le même volume puis active par renommage atomique du dossier versionné. `load_or_bundled` charge la version locale la plus récente ou le corpus intégré s’il n’y a pas encore de mise à jour.
 - **Reprise :** les dossiers `.staging-*` incomplets sont ignorés ; les paquets invalides ne remplacent pas la version active ; les séquences répétées identiques sont idempotentes et les retours à une séquence antérieure sont refusés.
 - **Signature :** les manifestes peuvent être signés Ed25519 ; `install_signed_update` et `load_signed_or_bundled` exigent une clé publique de confiance. Le générateur signe si `A11Y_UPDATE_PRIVATE_KEY` contient une clé privée PEM, et refuse les publications sans signature avec `--require-signature`.
-- **Publication :** workflow manuel `.github/workflows/publish-rgaa-dataset.yml`, séquence explicite et publication comme Release GitHub taguée `rgaa-data-<sequence>`. Le dépôt public [`All-Inclusives/RGAA-BIBLE`](https://github.com/All-Inclusives/RGAA-BIBLE) a reçu le commit initial `5dd396ee7ca8997cc958677622517f3fcba1f953` ; le workflow apparaît actif dans GitHub Actions. Aucune Release de données n’a encore été publiée.
-- **Sécurité :** le paquet de séquence 1 du dépôt est un artefact local de test non signé ; il ne doit pas être publié. La clé privée n’est ni générée ni stockée dans le projet. Le secret Actions `A11Y_UPDATE_PRIVATE_KEY` doit être ajouté au dépôt. L’application exigera la clé publique correspondante pour lire les mises à jour signées. L’API de téléchargement GitHub sera raccordée au consommateur Tauri.
+- **Publication :** workflow manuel `.github/workflows/publish-rgaa-dataset.yml`, séquence explicite et publication comme Release GitHub taguée `rgaa-data-<sequence>`. Le dépôt public [`All-Inclusives/RGAA-BIBLE`](https://github.com/All-Inclusives/RGAA-BIBLE) a reçu le commit initial `5dd396ee7ca8997cc958677622517f3fcba1f953`. Le commanditaire confirme qu’une mise à jour distante signée a été testée avec succès sur l’application Windows le 5 novembre 2026.
+- **Sécurité :** le paquet de séquence 1 du dépôt est un artefact local de test non signé ; il ne doit pas être publié. La clé privée ne doit jamais être stockée dans le projet et reste réservée au secret GitHub Actions `A11Y_UPDATE_PRIVATE_KEY` ; seule la clé publique correspondante est intégrée à l’application. La validation à chaque publication de données ultérieure demeure nécessaire.
 
 ## 3. Principes de réalisation
 
@@ -153,11 +161,12 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - [x] Définir le mécanisme de signature Ed25519 ; rendre les mises à jour signées obligatoires pour le parcours de chargement prévu en production.
 - [x] Préparer un workflow manuel GitHub Actions qui génère un paquet signé et publie les assets sous un tag de Release déterministe.
 - [x] Initialiser le dépôt GitHub puis y publier le code du projet et le workflow ; vérifier le commit distant et la disponibilité du workflow.
-- [ ] Générer une paire de clés hors du dépôt, enregistrer la clé privée comme secret GitHub Actions et configurer uniquement la clé publique dans l’application.
+- [x] Générer une paire de clés hors du dépôt, enregistrer la clé privée comme secret GitHub Actions et configurer uniquement la clé publique dans l’application (configuration et fonctionnement confirmés par le commanditaire).
 - [x] Raccorder la découverte/téléchargement des Releases au client Tauri ; exiger une signature valide avant installation.
+- [x] Valider avec succès le parcours de mise à jour distante signée dans l’application Windows (test rapporté par le commanditaire le 5 novembre 2026).
 
-**Livrables réalisés :** formats de manifeste et paquet, générateur, vérification Ed25519, installation locale versionnée et tests.  
-**Dépendance restante :** le client Tauri recherche et installe les Releases signées, mais la clé publique de compilation et le secret GitHub Actions ne sont pas configurés ; aucune Release signée n’a été créée. Sans clé publique, le bouton explique explicitement la configuration manquante et le corpus embarqué reste utilisé.
+**Livrables réalisés :** formats de manifeste et paquet, générateur, vérification Ed25519, installation locale versionnée, client Tauri et test de mise à jour distante signée réussi.
+**Suivi :** le parcours opérationnel est validé. Continuer à vérifier les mises à jour ultérieures et le corpus qui les accompagne, notamment au fur et à mesure de l’ajout des contenus pédagogiques.
 
 ### Jalon 4 — Interface Tauri
 
@@ -187,8 +196,8 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 |---|---|---|
 | Clavier et focus | Tous les contrôles sont atteignables ; indicateur de focus visible ; les dialogues se ferment par Échap et restituent le focus. | Aperçu navigateur validé ; indicateur de 3 px ajouté au formulaire de recherche. |
 | Lecteurs d’écran | Titres, régions, noms des contrôles et annonces de résultats, préférences et erreurs sont compréhensibles avec NVDA et Narrateur Windows. | Retest NVDA et Narrateur réussi selon le commanditaire le 5 novembre 2026. |
-| Zoom et responsive | À 200 % et à 320 px CSS, contenu et commandes restent utilisables sans défilement horizontal. | Commanditaire : loupe Windows à 200 % validée. Dans l’aperçu, largeurs CSS 640 px (viewport équivalente à 200 % sur 1280 px) et 320 px contrôlées sans débordement horizontal. |
-| Contraste | Texte ≥ 4,5:1 ; indicateurs et composants non textuels ≥ 3:1 dans les trois thèmes et avec un accent personnalisé. | Contraste du focus clavier mesuré dans l’aperçu : 7,12:1 (clair), 9,40:1 (sombre), 8,02:1 (sépia). Les sept profils sont ajoutés ; leurs 21 combinaisons avec les thèmes sont à vérifier. |
+| Zoom et responsive | À 200 % et à 320 px CSS, contenu et commandes restent utilisables sans défilement horizontal. | Commanditaire : zoom dans l’affichage interne testé à 200 % ; loupe Windows à 200 % également validée. Dans l’aperçu, largeurs CSS 640 px et 320 px contrôlées sans débordement. Vérifier les fiches au fil de leur enrichissement, car un défaut propre à un article reste possible. |
+| Contraste | Texte ≥ 4,5:1 ; indicateurs et composants non textuels ≥ 3:1 dans les trois thèmes et avec un accent personnalisé. | Profils de daltonisme fonctionnels ; contrastes sépia et sombre testés avec des personnes concernées. Contraste du focus clavier mesuré dans l’aperçu : 7,12:1 (clair), 9,40:1 (sombre), 8,02:1 (sépia). Contrôle détaillé de toutes les fiches à poursuivre progressivement. |
 | Parcours et erreurs | Recherche, filtres, ouverture/fermeture de fiche, préférences, états vides et erreurs sont utilisables et annoncés. | Recherche, dialogue, préférences et erreur HTTP 500 vérifiés dans l’aperçu ; hors ligne validé sur l’application Windows par le commanditaire. |
 | Hors ligne | Le corpus embarqué reste disponible sans réseau, sans altérer la connexion de l’utilisateur. | Commanditaire : fonctionnement hors ligne pleinement validé sur l’application Windows le 5 novembre 2026. |
 
@@ -199,10 +208,10 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - [x] Vérifier les parcours critiques et les annonces d’état, les titres, le focus et les messages d’erreur.
 - [x] Traiter les anomalies bloquantes et documenter les limites connues.
 - [x] Inventorier les polices fournies et implémenter les préférences locales de thème, accent et typographie avec un garde-fou de contraste ; les fontes libres utilisées sont embarquées et persistées localement.
-- [ ] Valider les sept nouveaux profils de repérage avec des personnes concernées, sans transmettre d’information par la couleur seule. Le commanditaire confirme que la validation initiale de la palette bleu et ambre est acquise ; les profils supplémentaires ne sont pas des simulations universelles du daltonisme.
+- [x] Tester avec des personnes concernées les profils de repérage et les contrastes sépia/sombre, sans transmettre d’information par la couleur seule. Les profils ne sont pas des simulations universelles du daltonisme ; poursuivre les vérifications détaillées des fiches au fil de leur enrichissement.
 - [x] Vérifier que les préférences restent appliquées après redémarrage de l’application desktop.
 - [x] N’embarquer que les fichiers de polices dont les droits d’utilisation ont été confirmés ; ne pas redistribuer les fontes système.
-- [x] Générer les builds et documenter installation, mise à jour, sources de données et contribution dans `apps/desktop/README.md`. Les mises à jour distantes restent non raccordées ; les artefacts locaux ne sont pas signés.
+- [x] Générer les builds et documenter installation, mise à jour, sources de données et contribution dans `apps/desktop/README.md`. Le parcours de mise à jour distante signée est testé ; les installateurs Windows restent des artefacts locaux non signés pour distribution publique.
 
 **Livrables :** rapport de recette, anomalies traitées ou suivies, documentation utilisateur et technique, builds ciblés.  
 **Sortie du jalon :** les parcours essentiels passent les tests définis et les builds ciblés sont reproductibles.
@@ -246,7 +255,7 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 - Mettre à jour les cases à cocher uniquement après vérification du livrable correspondant.
 - À chaque fin de jalon, noter ici la date, le résultat, les écarts et les décisions prises.
 - Si le périmètre ou une hypothèse structurante change, mettre à jour les sections concernées et la version du document.
-- Prochaine action recommandée : valider les sept nouveaux profils de repérage (contraste dans les trois thèmes et retours utilisateurs), puis configurer la paire de clés et publier une Release signée pour tester le parcours de mise à jour de bout en bout.
+- Prochaine action recommandée : commencer l’enrichissement pédagogique des critères (explications, impacts usagers, tags et exemples), exposer progressivement les filtres par composant et situation de handicap dans l’interface, et vérifier chaque fiche à 200 % ainsi que les mises à jour de données au fil des publications.
 
 ### Journal des jalons
 
@@ -276,3 +285,5 @@ Les semaines ci-dessous reprennent l’ordre indicatif du cahier des charges. El
 | 5 novembre 2026 | Jalon 3 — client de mises à jour signées | L’application Windows expose une vérification manuelle des Releases de données GitHub, limite les téléchargements, n’accepte que les assets attendus du dépôt, vérifie la signature Ed25519 avant le paquet et installe via le mécanisme atomique du cœur. Le corpus actif est remplacé seulement après validation et reste disponible hors ligne. La clé publique est injectée à la compilation par `A11Y_UPDATE_PUBLIC_KEY` ; aucune clé n’est fournie dans le dépôt et aucune Release signée n’existe encore, donc le test réseau de bout en bout attend la configuration par le commanditaire. |
 | 5 novembre 2026 | Jalon 5 — profils de repérage couleur | Avec l’accord du commanditaire, sept profils (formes partielles et totales rouge-vert et bleu-jaune, et achromatopsie) sont ajoutés au sélecteur. Ce sont des palettes ajustant les accents et repères, pas des filtres de simulation ni des garanties universelles. La palette bleu et ambre initiale est validée par des personnes concernées ; la recette de contraste des nouveaux profils dans les trois thèmes et leur validation utilisateur restent à réaliser. |
 | 5 novembre 2026 | Jalon 5 — recette de base et documentation | Le retest NVDA/Narrateur et la loupe Windows à 200 % sont confirmés par le commanditaire. Des smoke tests Playwright vérifient la langue, le titre principal, les noms des contrôles visibles, les textes alternatifs, l’unicité des identifiants, les noms de dialogues ouverts et l’absence de débordement horizontal à 640 et 320 px CSS. Les parcours recherche, filtres, dialogues, préférences, retour du focus et annonce d’une erreur sont exercés dans l’aperçu ; le fonctionnement hors ligne est validé sur l’exécutable par le commanditaire. Le README desktop documente maintenant l’installation locale, la disponibilité des données, l’absence actuelle de mises à jour distantes et les commandes de contribution. Limites restantes : pas de scanner WCAG dédié configuré, palette à valider avec des personnes concernées, et installateurs non signés pour la distribution publique. |
+| 5 novembre 2026 | Validation des mises à jour et des profils d’affichage | Le commanditaire confirme que les mises à jour distantes ont été testées avec succès. Les profils de repérage liés aux daltonismes sont fonctionnels ; les contrastes sépia et sombre ont été testés avec des personnes concernées, ainsi que le zoom de l’affichage interne à 200 %. La robustesse sera vérifiée au fil des prochains jeux de données et des fiches pédagogiques, y compris les éventuels défauts propres à certains articles. |
+| 6 novembre 2026 | Structure pédagogique et pilote 1.1.1 | Ajout du modèle structuré `pedagogicalTests`, de la grille éditoriale indépendante `data/pedagogy-fr.json` et de son affichage dans les fiches. Le test 1.1.1 est illustré par quatre cas liés à la même ressource, avec états d’alternative distincts, snippets, provenance et licence. Les textes restent explicitement en brouillon à relire. Les 16 tests Rust et le build TypeScript passent ; le navigateur confirme le chargement des illustrations et l’absence de débordement à 1280, 640 et 320 px. |
