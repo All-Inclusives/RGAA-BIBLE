@@ -38,7 +38,8 @@ jobs:
           $config = Get-Content -Raw apps/desktop/src-tauri/tauri.conf.json | ConvertFrom-Json
           $package = Get-Content -Raw apps/desktop/package.json | ConvertFrom-Json
           $cargo = Get-Content apps/desktop/src-tauri/Cargo.toml -Raw
-          if ($config.version -ne $package.version -or $cargo -notmatch "(?m)^version = `"$([regex]::Escape($config.version))`"$") {
+          $cargoVersion = [regex]::Match($cargo, '(?m)^version\s*=\s*"([^"]+)"\s*$').Groups[1].Value
+          if ($config.version -ne $package.version -or $config.version -ne $cargoVersion) {
             throw "Keep the Tauri, frontend, and Rust package versions in sync."
           }
 
