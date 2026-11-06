@@ -1,0 +1,98 @@
+name: Publish AccessiGuide desktop
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Check out project
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Validate release configuration
+        shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          A11Y_UPDATE_PUBLIC_KEY: ${{ secrets.A11Y_UPDATE_PUBLIC_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:TAURI_SIGNING_PRIVATE_KEY)) {
+            throw "Configure the TAURI_SIGNING_PRIVATE_KEY repository secret."
+          }
+          if ($env:A11Y_UPDATE_PUBLIC_KEY -notmatch '^[A-Fa-f0-9]{64}$') {
+            throw "Configure A11Y_UPDATE_PUBLIC_KEY as a 64-character hexadecimal repository secret."
+          }
+          $config = Get-Content -Raw apps/desktop/src-tauri/tauri.conf.json | ConvertFrom-Json
+          $package = Get-Content -Raw apps/desktop/package.json | ConvertFrom-Json
+          $cargo = Get-Content apps/desktop/src-tauri/Cargo.toml -Raw
+          if ($config.version -ne $package.version -or $cargo -notmatch "(?m)^version = `"$([regex]::Escape($config.version))`"$") {
+            throw "Keep the Tauri, frontend, and Rust package versions in sync."
+          }
+
+      - name: Install frontend dependencies
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Build signed Windows updater artifacts
+        working-directory: apps/desktop
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          A11Y_UPDATE_PUBLIC_KEY: ${{ secrets.A11Y_UPDATE_PUBLIC_KEY }}
+        run: npm run tauri build -- --bundles nsis
+
+      - name: Create updater feed
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        shell: pwsh
+        run: |
+          $config = Get-Content -Raw apps/desktop/src-tauri/tauri.conf.json | ConvertFrom-Json
+          $env:APP_RELEASE_TAG = "accessiguide-v$($config.version)"
+          node tools/create-desktop-update-feed.js
+
+      - name: Publish versioned release and update feed
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          $config = Get-Content -Raw apps/desktop/src-tauri/tauri.conf.json | ConvertFrom-Json
+          $releaseTag = "accessiguide-v$($config.version)"
+          $bundleDir = "apps/desktop/src-tauri/target/release/bundle"
+          $installer = Get-ChildItem "$bundleDir/nsis" -Filter "*-setup.exe"
+          if ($installer.Count -ne 1) { throw "Expected exactly one NSIS installer." }
+          $signature = Get-Item "$($installer.FullName).sig"
+          $latestJson = Get-Item "$bundleDir/latest.json"
+
+          gh release view $releaseTag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $releaseTag `
+              --title "AccessiGuide $($config.version)" `
+              --notes "Signed Windows updater release for AccessiGuide $($config.version)."
+            if ($LASTEXITCODE -ne 0) { throw "Could not create release $releaseTag." }
+          }
+          gh release upload $releaseTag $installer.FullName $signature.FullName $latestJson.FullName --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Could not upload the signed assets to $releaseTag." }
+
+          gh release view accessiguide-update-feed *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create accessiguide-update-feed --prerelease `
+              --title "AccessiGuide update feed" `
+              --notes "Stable updater metadata feed. Do not delete this release."
+            if ($LASTEXITCODE -ne 0) { throw "Could not create the stable updater feed release." }
+          }
+          gh release upload accessiguide-update-feed $latestJson.FullName --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Could not update the stable updater feed." }

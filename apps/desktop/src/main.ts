@@ -1,4 +1,6 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { relaunch } from "@tauri-apps/plugin-process";
+import { check as checkApplicationUpdate } from "@tauri-apps/plugin-updater";
 import authorAvatarUrl from "../../../assets/images/Avatar_BE.jpg";
 import brandLogoUrl from "../../../assets/images/logo_All-Inclusive.png";
 import { initializeDisplayPreferences } from "./displayPreferences";
@@ -92,9 +94,12 @@ const elements = {
 	announcement: document.querySelector<HTMLDivElement>("#announcement")!,
 	checkUpdates: document.querySelector<HTMLButtonElement>("#check-updates")!,
 	updateStatus: document.querySelector<HTMLParagraphElement>("#dataset-update-status")!,
+	checkApplicationUpdates: document.querySelector<HTMLButtonElement>("#check-application-updates")!,
+	applicationUpdateStatus: document.querySelector<HTMLParagraphElement>("#application-update-status")!,
 };
 
 const runtimeIsTauri = isTauri();
+let pendingApplicationUpdate: Awaited<ReturnType<typeof checkApplicationUpdate>> = null;
 let dataset: Dataset | undefined;
 let allResults: SearchResult[] = [];
 let visibleCount = 10;
@@ -507,8 +512,11 @@ function resetSearch(): void {
 async function initialize(): Promise<void> {
 	initializeDisplayPreferences();
 	elements.checkUpdates.disabled = !runtimeIsTauri;
+	elements.checkApplicationUpdates.disabled = !runtimeIsTauri;
 	if (!runtimeIsTauri) {
 		elements.updateStatus.textContent = "La vérification est disponible dans l’application Windows.";
+		elements.applicationUpdateStatus.textContent =
+			"La vérification est disponible dans l’application Windows.";
 	}
 	const searchShortcut = document.querySelector<HTMLElement>("#search-shortcut");
 	if (searchShortcut) {
@@ -543,6 +551,50 @@ async function initialize(): Promise<void> {
 				error instanceof Error ? error.message : "La vérification des mises à jour a échoué.";
 		} finally {
 			elements.checkUpdates.disabled = false;
+		}
+	});
+
+	elements.checkApplicationUpdates.addEventListener("click", async () => {
+		elements.checkApplicationUpdates.disabled = true;
+		try {
+			if (pendingApplicationUpdate) {
+				elements.applicationUpdateStatus.textContent =
+					`Téléchargement de la version ${pendingApplicationUpdate.version}…`;
+				await pendingApplicationUpdate.downloadAndInstall((event) => {
+					if (event.event === "Started") {
+						elements.applicationUpdateStatus.textContent =
+							"Le téléchargement de la mise à jour a commencé…";
+					} else if (event.event === "Finished") {
+						elements.applicationUpdateStatus.textContent =
+							"Mise à jour téléchargée. Redémarrage de l’application…";
+					}
+				});
+				await relaunch();
+				return;
+			}
+
+			elements.applicationUpdateStatus.textContent =
+				"Recherche d’une nouvelle version de l’application…";
+			pendingApplicationUpdate = await checkApplicationUpdate();
+			if (pendingApplicationUpdate) {
+				elements.applicationUpdateStatus.textContent =
+					`La version ${pendingApplicationUpdate.version} est disponible. Sélectionnez le bouton pour la télécharger et l’installer.`;
+				elements.checkApplicationUpdates.textContent =
+					`Installer la version ${pendingApplicationUpdate.version}`;
+			} else {
+				elements.applicationUpdateStatus.textContent =
+					"L’application est déjà à jour.";
+			}
+		} catch (error) {
+			pendingApplicationUpdate = null;
+			elements.checkApplicationUpdates.textContent =
+				"Rechercher une mise à jour de l’application";
+			elements.applicationUpdateStatus.textContent =
+				error instanceof Error
+					? `La mise à jour de l’application a échoué : ${error.message}`
+					: "La mise à jour de l’application a échoué pour une raison inattendue.";
+		} finally {
+			elements.checkApplicationUpdates.disabled = false;
 		}
 	});
 

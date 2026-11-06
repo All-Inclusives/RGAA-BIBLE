@@ -16,25 +16,36 @@ Le serveur Vite affiche l’aperçu à `http://localhost:5173`. Le corpus de dé
 ## Build Windows
 
 ```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = "$env:USERPROFILE\.tauri\accessiguide-updater.key"
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
 npm run tauri build
 ```
 
 Les installateurs MSI et NSIS sont générés sous `src-tauri/target/release/bundle`. L’application desktop charge le corpus RGAA embarqué et reste consultable hors ligne.
 
-Pour installer le build local, ouvrez le fichier MSI dans `src-tauri/target/release/bundle/msi` ou le programme d’installation NSIS dans `src-tauri/target/release/bundle/nsis`. Ces paquets x64 sont des artefacts de développement ; ils ne sont pas signés pour une distribution publique.
+Pour installer le build local, ouvrez le fichier MSI dans `src-tauri/target/release/bundle/msi` ou le programme d’installation NSIS dans `src-tauri/target/release/bundle/nsis`. Ces paquets x64 sont des artefacts de développement ; leur signature Tauri sert à authentifier les mises à jour et ne remplace pas une signature Authenticode de distribution Windows.
 
-## Données et mises à jour
+## Mises à jour de l’application et des données
 
-Le corpus RGAA 4.1.2 est embarqué dans l’application. La recherche et les fiches restent disponibles sans connexion. Dans l’application Windows, **Vérifier les mises à jour** recherche la dernière Release `rgaa-data-<séquence>` du dépôt GitHub, vérifie la signature Ed25519 du manifeste puis l’intégrité et la provenance du corpus avant installation. Une mise à jour valide est activée immédiatement ; le corpus embarqué reste disponible si aucune mise à jour locale n’existe.
+L’application possède deux mises à jour indépendantes, clairement séparées dans **Affichage** :
 
-Le commanditaire a validé le fonctionnement des mises à jour distantes sur l’application Windows le 5 novembre 2026. Pour configurer une nouvelle build ou renouveler la clé, la clé publique Ed25519 (32 octets en 64 caractères hexadécimaux) est injectée à la compilation dans `A11Y_UPDATE_PUBLIC_KEY`, par exemple dans PowerShell avant le build :
+- **Application AccessiGuide** : le plugin officiel Tauri vérifie un manifeste distinct, puis télécharge et installe un installeur Windows NSIS signé. Une relance applique la nouvelle version. Le flux stable `accessiguide-update-feed` contient les métadonnées ; les exécutables signés sont publiés dans une Release versionnée `accessiguide-v<version>`.
+- **Données du référentiel RGAA** : le bouton dédié recherche les Releases `rgaa-data-<séquence>`, vérifie la signature Ed25519 du manifeste, puis l’intégrité et la provenance du corpus avant activation immédiate. Le corpus intégré reste disponible hors ligne.
+
+Le parcours d’application nécessite les secrets GitHub Actions `TAURI_SIGNING_PRIVATE_KEY` (contenu de la clé privée Tauri, à conserver hors du dépôt) et `A11Y_UPDATE_PUBLIC_KEY` (clé publique du canal de données, 64 caractères hexadécimaux). La clé publique Tauri utilisée pour vérifier les installeurs est intégrée à `src-tauri/tauri.conf.json` ; le secret `TAURI_SIGNING_PRIVATE_KEY` doit contenir le contenu du fichier privé, pas son chemin. Le secret `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` est requis seulement si la clé privée est protégée par un mot de passe.
+
+La clé privée Tauri locale est conservée hors du dépôt sous `%USERPROFILE%\.tauri\accessiguide-updater.key`. Pour une machine de développement, définissez-la avant de générer un installeur signé :
 
 ```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = "$env:USERPROFILE\.tauri\accessiguide-updater.key"
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
 $env:A11Y_UPDATE_PUBLIC_KEY = "<64 caractères hexadécimaux de la clé publique>"
-npm run tauri build
+npm run tauri build -- --bundles nsis
 ```
 
-La clé privée PEM correspondante doit être conservée uniquement comme secret GitHub Actions `A11Y_UPDATE_PRIVATE_KEY` pour publier une Release avec le workflow existant. Ne placez jamais la clé privée dans le dépôt ni dans les paramètres de build. L’application n’accepte aucun téléchargement non signé. Les mises à jour ultérieures et leur contenu devront continuer à être testés au fil des publications, notamment lors de l’enrichissement pédagogique des critères.
+Le workflow manuel **Publish AccessiGuide desktop** construit et signe l’application, publie la Release versionnée et actualise le flux stable. **La version 0.1.0 ne contient pas le nouveau mécanisme d’auto-mise à jour : son remplacement initial par la version 0.1.1 doit être fait en lançant manuellement le nouvel installeur signé. Les mises à jour automatiques ne fonctionneront qu’à partir de cette version bootstrap.** Ne placez jamais une clé privée dans le dépôt. Les versions et leur contenu doivent continuer à être testés après publication.
+
+Pour le canal de données, la clé privée Ed25519 reste uniquement dans le secret GitHub Actions `A11Y_UPDATE_PRIVATE_KEY`. Le corpus et l’application ont des séquences/versionnements distincts ; mettre à jour l’un ne remplace pas l’autre.
 
 La provenance des données et les licences du corpus et des polices tierces sont décrites dans [`THIRD_PARTY_NOTICES.md`](../../THIRD_PARTY_NOTICES.md). Pour régénérer le corpus depuis le dépôt source officiel déjà cloné à la racine du projet, exécutez `node tools/import-rgaa.js`.
 
@@ -52,10 +63,9 @@ Depuis `apps/desktop`, validez le frontend et générez les paquets Windows :
 
 ```powershell
 npm run build
-npm run tauri build
 ```
 
-Pour contribuer, gardez séparés le texte normatif officiel et les contenus éditoriaux, conservez la provenance des données et leurs mentions de licence, puis vérifiez les changements avec les commandes ci-dessus. Les préférences et la revue d’accessibilité doivent également être testées lors de toute modification de l’interface.
+Pour créer un installeur, définissez d’abord les variables de signature indiquées dans « Build Windows », puis exécutez `npm run tauri build`. Pour contribuer, gardez séparés le texte normatif officiel et les contenus éditoriaux, conservez la provenance des données et leurs mentions de licence, puis vérifiez les changements avec les commandes ci-dessus. Les préférences et la revue d’accessibilité doivent également être testées lors de toute modification de l’interface.
 
 ## Préférences d’affichage
 

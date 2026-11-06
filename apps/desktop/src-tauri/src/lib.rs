@@ -158,6 +158,8 @@ fn hex_digit(value: u8) -> Result<u8, String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let update_store = app.path().app_data_dir()?.join("rgaa-updates");
             let trusted_public_key = trusted_update_public_key().map_err(std::io::Error::other)?;

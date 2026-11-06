@@ -1,6 +1,6 @@
 [package]
 name = "accessiguide-desktop"
-version = "0.1.0"
+version = "0.1.1"
 description = "AccessiGuide desktop application"
 authors = ["ALL-Inclusive / Bruno ECARD <bruno.ecard@gmail.com>"]
 edition = "2024"
@@ -20,6 +20,8 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri = { version = "2", features = [] }
+tauri-plugin-process = "2"
+tauri-plugin-updater = "2"
 a11y-core = { path = "../../../crates/a11y-core" }
 serde = { version = "1", features = ["derive"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "stream"] }
